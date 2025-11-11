@@ -5,9 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
-
 import androidx.appcompat.app.AppCompatActivity;
-
 
 public class SignupActivity extends AppCompatActivity {
     CheckBox chkAll, chkUse, chkPrivacy, chkAd;
@@ -35,7 +33,7 @@ public class SignupActivity extends AppCompatActivity {
         chkPrivacy.setOnCheckedChangeListener((buttonView, isChecked) -> updateAllChecked());
         chkAd.setOnCheckedChangeListener((buttonView, isChecked) -> updateAllChecked());
 
-        // 🟤 포토로그 로고 클릭 시 로그인 화면 이동
+        // 포토로그 로고 클릭 시 로그인 화면 이동
         LinearLayout logoLayout = findViewById(R.id.logoLayout);
         logoLayout.setOnClickListener(v -> {
             Intent intent = new Intent(SignupActivity.this, LoginActivity.class);

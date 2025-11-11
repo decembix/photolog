@@ -41,5 +41,12 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    // Retrofit2 & Gson
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+// OkHttp (Retrofit 내부에서 사용)
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+// Gson (JsonObject용)
+    implementation("com.google.code.gson:gson:2.10.1")
 
 }

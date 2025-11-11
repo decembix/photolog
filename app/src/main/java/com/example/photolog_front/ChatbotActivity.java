@@ -7,10 +7,10 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -22,9 +22,17 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.gson.JsonObject;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ChatbotActivity extends AppCompatActivity {
 
@@ -45,7 +53,8 @@ public class ChatbotActivity extends AppCompatActivity {
                             ArrayList<String> results = result.getData().getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                             if (results != null && !results.isEmpty()) {
                                 String recognizedText = results.get(0);
-                                addUserAnswer(recognizedText);
+                                // 음성 입력 구분
+                                addUserAnswer(recognizedText, "voice");
                             }
                         }
                     }
@@ -112,7 +121,6 @@ public class ChatbotActivity extends AppCompatActivity {
         dialog.show();
     }
 
-
     private void startSpeechRecognition() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -131,7 +139,13 @@ public class ChatbotActivity extends AppCompatActivity {
         return true;
     }
 
+    // 기본 버전 (텍스트 입력용)
     public void addUserAnswer(String text) {
+        addUserAnswer(text, "text"); // 기본은 텍스트 입력
+    }
+
+    // 오버로딩된 버전 (음성/텍스트 구분)
+    public void addUserAnswer(String text, String inputType) {
         int lastUserIndex = -1;
         for (int i = messageList.size() - 1; i >= 0; i--) {
             if (messageList.get(i).getViewType() == ChatMessage.VIEW_TYPE_USER_ANSWER) {
@@ -151,12 +165,14 @@ public class ChatbotActivity extends AppCompatActivity {
         }
 
         answerCount++;
-
         if (answerCount >= MIN_ANSWERS) {
             btnFinishChat.setEnabled(true);
             btnFinishChat.setVisibility(View.VISIBLE);
             btnFinishChat.setAlpha(1f);
         }
+
+        // 서버로 전송 (inputType 포함)
+        sendMessageToServer(text, inputType);
 
         chatRecyclerView.postDelayed(() -> {
             String nextQuestion = generateNextQuestion();
@@ -178,16 +194,34 @@ public class ChatbotActivity extends AppCompatActivity {
         return sampleQuestions[index];
     }
 
-    // 커스텀 입력창 사용
-    public void showTextInputDialog(String currentText) {
-        showCustomInputDialog(
-                "답변 입력",
-                currentText.equals("답변을 입력하려면 여기를 눌러주세요.") ? "" : currentText,
-                this::addUserAnswer
-        );
+    private void sendMessageToServer(String text, String inputType) {
+        JsonObject body = new JsonObject();
+        body.addProperty("input_type", inputType);
+        body.addProperty("content", text);
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://your-backend-url.com/") // 실제 백엔드 주소로 교체
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        ApiService api = retrofit.create(ApiService.class);
+        api.sendUserMessage(body).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if (response.isSuccessful()) {
+                    Log.d("Chatbot", "✅ 서버 응답 성공: " + response.message());
+                } else {
+                    Log.e("Chatbot", "❌ 서버 응답 실패: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e("Chatbot", "🚨 서버 전송 실패: " + t.getMessage());
+            }
+        });
     }
 
-    // 일기 결과 화면으로 이동
     private void goToDiaryResult() {
         ArrayList<String> answers = new ArrayList<>();
         for (ChatMessage msg : messageList) {
@@ -212,9 +246,7 @@ public class ChatbotActivity extends AppCompatActivity {
 
         startActivity(intent);
     }
-
-    // 포토로그 감성 커스텀 입력 다이얼로그
-    private void showCustomInputDialog(String title, String defaultText, OnSaveListener listener) {
+    void showCustomInputDialog(String title, String defaultText, OnSaveListener listener) {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_custom, null);
         TextView tvTitle = dialogView.findViewById(R.id.tv_dialog_title);
         EditText etInput = dialogView.findViewById(R.id.et_dialog_input);
@@ -222,7 +254,14 @@ public class ChatbotActivity extends AppCompatActivity {
         AppCompatButton btnSave = dialogView.findViewById(R.id.btn_save);
 
         tvTitle.setText(title);
-        etInput.setText(defaultText);
+
+        // 수정
+        if (defaultText.equals("답변을 입력하려면 여기를 눌러주세요.") || defaultText.isEmpty()) {
+            etInput.setHint("답변을 입력하려면 여기를 눌러주세요.");
+            etInput.setText("");
+        } else {
+            etInput.setText(defaultText);
+        }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)

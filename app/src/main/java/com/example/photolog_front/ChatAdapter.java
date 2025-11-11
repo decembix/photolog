@@ -7,8 +7,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.List;
 
 public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder> {
@@ -53,7 +55,6 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
             ((AiQuestionViewHolder) holder).bind(message.getText());
         } else if (holder instanceof UserAnswerViewHolder) {
             ((UserAnswerViewHolder) holder).bind(message.getText());
-            // 클릭 리스너는 ViewHolder의 bind 메소드에서 직접 처리하므로 여기서는 제거
         }
     }
 
@@ -62,16 +63,13 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
         return messageList.size();
     }
 
-    // 1. 모든 ViewHolder의 부모가 될 BaseViewHolder 생성
+    // 모든 ViewHolder의 부모
     abstract static class BaseViewHolder extends RecyclerView.ViewHolder {
-        BaseViewHolder(@NonNull View itemView) {
-            super(itemView);
-        }
-        // bind 메소드의 파라미터 타입을 Object로 통일
+        BaseViewHolder(@NonNull View itemView) { super(itemView); }
         abstract void bind(Object data);
     }
 
-    // ImageViewHolder가 BaseViewHolder를 상속
+    // 📸 이미지 (첫 번째 질문 사진)
     static class ImageViewHolder extends BaseViewHolder {
         ImageView imageView;
         ImageViewHolder(@NonNull View itemView) {
@@ -86,7 +84,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
         }
     }
 
-    // AiQuestionViewHolder가 BaseViewHolder를 상속
+    // 💬 AI 질문 말풍선
     static class AiQuestionViewHolder extends BaseViewHolder {
         TextView textView;
         AiQuestionViewHolder(@NonNull View itemView) {
@@ -101,7 +99,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
         }
     }
 
-    // UserAnswerViewHolder가 BaseViewHolder를 상속 (수정된 부분)
+    // 🙋 사용자 답변 말풍선
     static class UserAnswerViewHolder extends BaseViewHolder {
         TextView tv;
         UserAnswerViewHolder(@NonNull View itemView) {
@@ -111,14 +109,24 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
 
         @Override
         void bind(Object data) {
-            if (data instanceof String) tv.setText((String) data);
+            if (data instanceof String)
+                tv.setText((String) data);
 
-            // ViewHolder 자체에서 클릭 리스너를 설정
+            // 클릭 → 텍스트 입력 다이얼로그 표시
             itemView.setOnClickListener(v -> {
                 Context c = v.getContext();
                 if (c instanceof ChatbotActivity) {
-                    // ChatbotActivity의 showTextInputDialog를 호출
-                    ((ChatbotActivity) c).showTextInputDialog(tv.getText().toString());
+                    ChatbotActivity activity = (ChatbotActivity) c;
+
+                    // 다이얼로그를 띄워 사용자가 입력하면
+                    activity.showCustomInputDialog(
+                            "답변 입력",
+                            tv.getText().toString(),
+                            text -> {
+                                // ✅ 입력 완료 시, ChatbotActivity의 addUserAnswer(String, String) 호출
+                                activity.addUserAnswer(text, "text");
+                            }
+                    );
                 }
             });
         }
