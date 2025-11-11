@@ -34,7 +34,16 @@ public class LoginActivity extends AppCompatActivity {
 
                 String id = etId.getText().toString().trim();
                 String pw = etPw.getText().toString().trim();
-
+                // 포토로그 글씨 + 로고 전체 클릭 시 로그인 화면 이동
+                LinearLayout logoLayout = findViewById(R.id.logoLayout);
+                logoLayout.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        startActivity(intent);
+                    }
+                });
                 // 예시 로그인 로직
                 if (id.equals("test") && pw.equals("1234")) {
                     tvError.setVisibility(View.GONE); // 오류 메시지 숨김

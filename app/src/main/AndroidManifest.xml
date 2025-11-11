@@ -24,6 +24,7 @@
 
         <!-- 회원가입 화면 추가 -->
         <activity android:name=".JoinActivity" />
+        <activity android:name=".SignupActivity" />
 
     </application>
 </manifest>

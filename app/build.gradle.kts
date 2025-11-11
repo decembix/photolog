@@ -25,6 +25,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -32,8 +33,7 @@ android {
 }
 
 dependencies {
-
-    implementation(libs.appcompat)
+    implementation("androidx.appcompat:appcompat:1.6.1")
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
