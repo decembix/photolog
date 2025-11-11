@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F6EBDC">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="40dp">
+
+        <!-- 로고 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="포토로그"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#5C3A22"
+                android:fontFamily="@font/paperlogy_5"/>
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginStart="6dp"
+                android:src="@drawable/photolog_logo"/>
+        </LinearLayout>
+
+        <!-- 제목 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="회원 가입"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#5C3A22"
+            android:layout_marginTop="25dp"/>
+
+        <!-- 입력 필드 -->
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="이름"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/edittext_bg"
+            android:padding="10dp"/>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="아이디"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/edittext_bg"
+            android:padding="10dp"/>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="비밀번호"
+            android:layout_marginTop="10dp"
+            android:inputType="textPassword"
+            android:background="@drawable/edittext_bg"
+            android:padding="10dp"/>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="비밀번호 재입력"
+            android:layout_marginTop="10dp"
+            android:inputType="textPassword"
+            android:background="@drawable/edittext_bg"
+            android:padding="10dp"/>
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="이메일"
+            android:layout_marginTop="10dp"
+            android:inputType="textEmailAddress"
+            android:background="@drawable/edittext_bg"
+            android:padding="10dp"/>
+
+        <!-- 약관 전체 동의 -->
+        <CheckBox
+            android:id="@+id/chkAll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="포토로그 전체약관에 동의합니다."
+            android:textStyle="bold"
+            android:textColor="#5C3A22"
+            android:layout_marginTop="15dp"/>
+
+        <!-- 개별 약관 -->
+        <CheckBox
+            android:id="@+id/chkUse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="포토로그 이용약관 동의 (필수)"
+            android:textColor="#5C3A22"
+            android:layout_marginTop="6dp"/>
+
+        <CheckBox
+            android:id="@+id/chkPrivacy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="개인정보 수집 및 이용 동의 (필수)"
+            android:textColor="#5C3A22"/>
+
+        <CheckBox
+            android:id="@+id/chkAd"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="맞춤형 광고 수신 동의 (선택)"
+            android:textColor="#5C3A22"/>
+
+        <!-- 회원가입 버튼 -->
+        <Button
+            android:id="@+id/btnJoin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="회원가입"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:background="@drawable/login_button_bg"/>
+    </LinearLayout>
+</ScrollView>
