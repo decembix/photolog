@@ -24,7 +24,7 @@ public class LoginActivity extends AppCompatActivity {
 
         TextView joinText = findViewById(R.id.tvJoin); // '회원 가입' 텍스트뷰 id
         joinText.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, JoinActivity.class);
+            Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
             startActivity(intent);
         });
 
