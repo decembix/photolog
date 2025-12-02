@@ -3,14 +3,26 @@ package com.example.photolog_front;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.*;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.photolog_front.model.LoginRequest;
+import com.example.photolog_front.model.LoginResponse;
+import com.example.photolog_front.network.ApiService;
+import com.example.photolog_front.network.RetrofitClient;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity {
 
     EditText etId, etPw;
-    TextView tvError, tvFindId, tvFindPassword;
+    TextView tvError, tvJoin;
     Button btnLogin;
 
     @Override
@@ -20,45 +32,71 @@ public class LoginActivity extends AppCompatActivity {
 
         etId = findViewById(R.id.etId);
         etPw = findViewById(R.id.etPw);
-        btnLogin = findViewById(R.id.btnLogin);
         tvError = findViewById(R.id.tvError);
+        btnLogin = findViewById(R.id.btnLogin);
+        tvJoin = findViewById(R.id.tvJoin);
 
-        tvFindId = findViewById(R.id.tvFindId);               // 아이디 찾기 버튼
-        tvFindPassword = findViewById(R.id.tvFindPassword);   // 비밀번호 찾기 버튼
-
-        TextView joinText = findViewById(R.id.tvJoin);        // '회원 가입' 텍스트
-        joinText.setOnClickListener(v -> {
+        // 회원가입 이동
+        tvJoin.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
             startActivity(intent);
         });
 
-        // 🔹 아이디 찾기 클릭 시 → activity_find_id 로 이동
-        tvFindId.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, FindIdActivity.class);
-            startActivity(intent);
-        });
+        // 로그인 버튼 클릭
+        btnLogin.setOnClickListener(v -> attemptLogin());
+    }
 
-        // 🔹 비밀번호 찾기 클릭 시 → activity_find_pwd 로 이동
-        tvFindPassword.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, FindPwdActivity.class);
-            startActivity(intent);
-        });
+    private void attemptLogin() {
+        String id = etId.getText().toString().trim();
+        String pw = etPw.getText().toString().trim();
 
-        // 🔹 로그인 버튼 클릭 시
-        btnLogin.setOnClickListener(v -> {
+        if (id.isEmpty() || pw.isEmpty()) {
+            showError("아이디와 비밀번호를 입력해주세요.");
+            return;
+        }
 
-            String id = etId.getText().toString().trim();
-            String pw = etPw.getText().toString().trim();
+        loginRequest(id, pw);
+    }
 
-            // 임시 로그인 로직
-            if (id.equals("test") && pw.equals("1234")) {
-                tvError.setVisibility(View.GONE);
-                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                startActivity(intent);
-                finish();
-            } else {
-                tvError.setText("아이디 또는 비밀번호가 틀렸습니다.");
-                tvError.setVisibility(View.VISIBLE);
+    private void showError(String msg) {
+        tvError.setText(msg);
+        tvError.setVisibility(View.VISIBLE);
+    }
+
+    private void loginRequest(String id, String pw) {
+        LoginRequest request = new LoginRequest(id, pw);
+
+        ApiService api = RetrofitClient.getApiService();
+        api.login(request).enqueue(new Callback<LoginResponse>() {
+            @Override
+            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+
+                if (response.isSuccessful()) {
+                    LoginResponse data = response.body();
+
+                    Toast.makeText(LoginActivity.this,
+                            "로그인 성공!", Toast.LENGTH_SHORT).show();
+
+                    // JWT 저장 (필요하면 SharedPreferences로 저장 가능)
+                    // SharedPreferences prefs = getSharedPreferences("auth", MODE_PRIVATE);
+                    // prefs.edit().putString("token", data.getAccessToken()).apply();
+
+                    // 메인 화면으로 이동
+                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
+                else if (response.code() == 401) {
+                    showError("아이디 또는 비밀번호가 틀렸습니다.");
+                }
+                else {
+                    showError("로그인 실패: 서버 오류("+response.code()+")");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<LoginResponse> call, Throwable t) {
+                showError("네트워크 오류 발생. 다시 시도해주세요.");
             }
         });
     }

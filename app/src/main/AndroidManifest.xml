@@ -21,7 +21,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Photolog"
 
-        android:usesCleartextTraffic="true">   <!-- ⭐⭐ HTTP 통신 허용 추가 ⭐⭐ -->
+        android:usesCleartextTraffic="true">   <!-- HTTP 통신 허용 추가 -->
 
         <!-- 회원가입 -->
         <activity android:name=".SignupActivity"
