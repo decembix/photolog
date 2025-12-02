@@ -86,16 +86,6 @@
         android:background="@drawable/edittext_bg"
         android:padding="10dp"/>
 
-    <EditText
-        android:layout_gravity="center_horizontal"
-        android:layout_width="280dp"
-        android:layout_height="45dp"
-        android:hint="이메일"
-        android:layout_marginTop="10dp"
-        android:inputType="textEmailAddress"
-        android:background="@drawable/edittext_bg"
-        android:padding="10dp"/>
-
     <!-- 약관 전체 동의 -->
     <CheckBox
         android:id="@+id/chkAll"

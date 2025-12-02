@@ -53,6 +53,12 @@ public class MainActivity extends AppCompatActivity {
             startActivity(familyIntent);
         });
 
+        ImageView myPage = findViewById(R.id.my_page);
+        layoutFamilyHeader.setOnClickListener(v -> {
+            Intent familyIntent = new Intent(MainActivity.this, MyPageActivity.class);
+            startActivity(familyIntent);
+        });
+
         ImageView imgPlusIcon = findViewById(R.id.img_plus_icon);
         imgPlusIcon.setOnClickListener(v -> {
             Intent familyIntent = new Intent(MainActivity.this, FamilyDiaryActivity.class);
