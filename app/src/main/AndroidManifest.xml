@@ -19,7 +19,9 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Photolog">
+        android:theme="@style/Theme.Photolog"
+
+        android:usesCleartextTraffic="true">   <!-- ⭐⭐ HTTP 통신 허용 추가 ⭐⭐ -->
 
         <!-- 회원가입 -->
         <activity android:name=".SignupActivity"
@@ -37,7 +39,7 @@
         <activity android:name=".MainActivity"
             android:exported="false"/>
 
-        <!-- 로그인 (런처 Activity → 반드시 exported=true 필요!) -->
+        <!-- 로그인 (런처 Activity) -->
         <activity android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
@@ -61,9 +63,6 @@
         <activity android:name=".RePwdResultActivity"/>
         <activity android:name=".MyPageActivity"/>
         <activity android:name=".MakeGroupActivity"/>
-
-
-
 
     </application>
 

@@ -12,6 +12,15 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.photolog_front.model.SignupRequest;
+import com.example.photolog_front.model.SignupResponse;
+import com.example.photolog_front.network.ApiService;
+import com.example.photolog_front.network.RetrofitClient;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class SignupActivity extends AppCompatActivity {
 
     CheckBox chkAll, chkUse, chkPrivacy, chkAd;
@@ -32,9 +41,9 @@ public class SignupActivity extends AppCompatActivity {
 
         // 입력칸
         signName = findViewById(R.id.signName);
-        signId = findViewById(R.id.signId);   // ★ 수정됨
+        signId = findViewById(R.id.signId);
         signPwd = findViewById(R.id.signPwd);
-        signPwdCheck = findViewById(R.id.signPwdCheck); // ★ 비밀번호 확인 추가
+        signPwdCheck = findViewById(R.id.signPwdCheck);
 
         // 에러 문구
         tvError = findViewById(R.id.tvError);
@@ -61,7 +70,7 @@ public class SignupActivity extends AppCompatActivity {
         chkPrivacy.setOnCheckedChangeListener((b, c) -> updateAllChecked());
         chkAd.setOnCheckedChangeListener((b, c) -> updateAllChecked());
 
-        // ⭐ 회원가입 버튼 클릭
+        // 회원가입 버튼 클릭
         btnSignup.setOnClickListener(v -> checkSignup());
     }
 
@@ -71,7 +80,7 @@ public class SignupActivity extends AppCompatActivity {
         chkAll.setChecked(allChecked);
     }
 
-    // ⭐ 입력 검증 + 경고문 띄우기
+    // 1단계: 입력 검증
     private void checkSignup() {
 
         String name = signName.getText().toString().trim();
@@ -81,35 +90,66 @@ public class SignupActivity extends AppCompatActivity {
 
         // 빈칸 체크
         if (name.isEmpty() || id.isEmpty() || pw.isEmpty() || pwCheck.isEmpty()) {
-            tvError.setText("모든 칸을 채워주세요!");
-            tvError.setVisibility(View.VISIBLE);
-            Toast.makeText(this, "모든 칸을 채워주세요!", Toast.LENGTH_SHORT).show();
+            showError("모든 칸을 채워주세요!");
             return;
         }
 
         // 비밀번호 일치 확인
         if (!pw.equals(pwCheck)) {
-            tvError.setText("비밀번호가 일치하지 않습니다.");
-            tvError.setVisibility(View.VISIBLE);
-            Toast.makeText(this, "비밀번호 확인 필요!", Toast.LENGTH_SHORT).show();
+            showError("비밀번호가 일치하지 않습니다.");
             return;
         }
 
         // 필수 약관 체크
         if (!chkUse.isChecked() || !chkPrivacy.isChecked()) {
-            tvError.setText("필수 약관에 동의해야 합니다.");
-            tvError.setVisibility(View.VISIBLE);
-            Toast.makeText(this, "필수 약관 동의 필요!", Toast.LENGTH_SHORT).show();
+            showError("필수 약관에 동의해야 합니다.");
             return;
         }
 
-        // 성공 → 에러 숨기기
+        // 여기까지 통과하면 서버에 요청
         tvError.setVisibility(View.GONE);
+        requestSignup(name, id, pw);
+    }
 
-        Toast.makeText(this, "회원가입 완료!", Toast.LENGTH_SHORT).show();
+    private void showError(String msg) {
+        tvError.setText(msg);
+        tvError.setVisibility(View.VISIBLE);
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
 
-        // 로그인 페이지로 이동
-        Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
-        startActivity(intent);
+    // 2단계: 서버 회원가입 요청
+    private void requestSignup(String name, String id, String pw) {
+        // API 스펙: name, username, password
+        SignupRequest request = new SignupRequest(name, id, pw);
+
+        ApiService api = RetrofitClient.getApiService();
+        api.signup(request).enqueue(new Callback<SignupResponse>() {
+            @Override
+            public void onResponse(Call<SignupResponse> call, Response<SignupResponse> response) {
+
+                if (response.isSuccessful()) {
+                    // 200 OK
+                    Toast.makeText(SignupActivity.this,
+                            "회원가입 완료!", Toast.LENGTH_SHORT).show();
+
+                    // 로그인 페이지로 이동
+                    Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
+                    // 필요하면 회원정보 넘겨도 됨
+                    startActivity(intent);
+                    finish();
+
+                } else if (response.code() == 422) {
+                    // Validation Error
+                    showError("회원가입 실패: 입력값을 다시 확인해주세요.");
+                } else {
+                    showError("회원가입 실패: 서버 오류(" + response.code() + ")");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<SignupResponse> call, Throwable t) {
+                showError("네트워크 오류가 발생했습니다.\n다시 시도해주세요.");
+            }
+        });
     }
 }

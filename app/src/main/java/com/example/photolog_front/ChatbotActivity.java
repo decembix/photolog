@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.photolog_front.network.ApiService;
 import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
