@@ -32,7 +32,7 @@ public class SignupActivity extends AppCompatActivity {
 
         // 입력칸
         signName = findViewById(R.id.signName);
-        signName = findViewById(R.id.signId);
+        signId = findViewById(R.id.signId);
         signPwd = findViewById(R.id.signPwd);
 
         // 에러 문구
