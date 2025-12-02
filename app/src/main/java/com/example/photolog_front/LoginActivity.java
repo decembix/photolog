@@ -1,6 +1,7 @@
 package com.example.photolog_front;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -78,8 +79,9 @@ public class LoginActivity extends AppCompatActivity {
                             "로그인 성공!", Toast.LENGTH_SHORT).show();
 
                     // JWT 저장 (필요하면 SharedPreferences로 저장 가능)
-                    // SharedPreferences prefs = getSharedPreferences("auth", MODE_PRIVATE);
-                    // prefs.edit().putString("token", data.getAccessToken()).apply();
+                    SharedPreferences prefs = getSharedPreferences("auth", MODE_PRIVATE);
+                    prefs.edit().putString("token", response.body().getAccessToken()).apply();
+
 
                     // 메인 화면으로 이동
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
