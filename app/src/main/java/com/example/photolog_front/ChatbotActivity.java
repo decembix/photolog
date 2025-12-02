@@ -22,9 +22,11 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.photolog_front.model.ChatMessageRequest;
+import com.example.photolog_front.model.ChatMessageResponse;
 import com.example.photolog_front.network.ApiService;
 import com.example.photolog_front.network.RetrofitClient;
-import com.google.gson.JsonObject;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,21 +41,24 @@ public class ChatbotActivity extends AppCompatActivity {
     private RecyclerView chatRecyclerView;
     private ChatAdapter chatAdapter;
     private List<ChatMessage> messageList;
+
     private ImageButton btnMic;
     private AppCompatButton btnFinishChat;
 
+    private String sessionId;
+    private String imageUriString;
+
     private static final int MIN_ANSWERS = 3;
     private int answerCount = 0;
-
-    private String sessionId;   // ★ 서버 세션 ID 저장
-    private String firstQuestion; // ★ 서버 첫 질문 저장
 
     private final ActivityResultLauncher<Intent> speechLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.StartActivityForResult(),
                     result -> {
                         if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                            ArrayList<String> results = result.getData().getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                            ArrayList<String> results =
+                                    result.getData().getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+
                             if (results != null && !results.isEmpty()) {
                                 addUserAnswer(results.get(0), "voice");
                             }
@@ -66,37 +71,19 @@ public class ChatbotActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chatbot);
 
-        // 상단 로고 → 종료 확인 다이얼로그
-        findViewById(R.id.layout_logo).setOnClickListener(v -> showExitConfirmDialog());
+        // ====== Intent 데이터 받아오기 ======
+        sessionId = getIntent().getStringExtra("session_id");
+        String firstQuestion = getIntent().getStringExtra("question");
+        imageUriString = getIntent().getStringExtra("selected_photo_uri");
 
+        // ====== UI 초기화 ======
         chatRecyclerView = findViewById(R.id.chat_recycler_view);
         btnMic = findViewById(R.id.btn_mic);
         btnFinishChat = findViewById(R.id.btn_finish_chat);
-        messageList = new ArrayList<>();
 
-        // 초기 버튼 설정
-        btnFinishChat.setEnabled(false);
         btnFinishChat.setVisibility(View.INVISIBLE);
-        btnFinishChat.setAlpha(0.4f);
-
-        btnFinishChat.setOnClickListener(v -> goToDiaryResult());
-
-        // ★★★ DiaryGenerationActivity에서 전달된 데이터 수신
-        String imageUriString = getIntent().getStringExtra("selected_photo_uri");
-        sessionId = getIntent().getStringExtra("session_id");
-        firstQuestion = getIntent().getStringExtra("question");
-
-        if (firstQuestion == null) {
-            firstQuestion = "이 사진에 대해 이야기해볼까요?";  // fallback
-        }
-
-        Uri imageUri = Uri.parse(imageUriString);
-
-        // UI 초기 메시지 구성
-        messageList.add(new ChatMessage(ChatMessage.VIEW_TYPE_IMAGE, null, imageUri));
-        messageList.add(new ChatMessage(ChatMessage.VIEW_TYPE_AI_QUESTION, firstQuestion, null));
-        messageList.add(new ChatMessage(ChatMessage.VIEW_TYPE_USER_ANSWER, "답변을 입력하려면 여기를 눌러주세요.", null));
-
+        btnFinishChat.setEnabled(false);
+        messageList = new ArrayList<>();
         chatAdapter = new ChatAdapter(this, messageList);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
@@ -104,15 +91,161 @@ public class ChatbotActivity extends AppCompatActivity {
         chatRecyclerView.setLayoutManager(layoutManager);
         chatRecyclerView.setAdapter(chatAdapter);
 
-        // 마이크 버튼 이벤트
+        // ====== 첫 메시지 UI 구성 ======
+        Uri imageUri = imageUriString != null ? Uri.parse(imageUriString) : null;
+
+        if (imageUri != null) {
+            messageList.add(new ChatMessage(ChatMessage.VIEW_TYPE_IMAGE, null, imageUri));
+        }
+
+        if (firstQuestion != null) {
+            messageList.add(new ChatMessage(ChatMessage.VIEW_TYPE_AI_QUESTION, firstQuestion, null));
+        }
+
+        messageList.add(new ChatMessage(
+                ChatMessage.VIEW_TYPE_USER_ANSWER,
+                "답변을 입력하려면 여기를 눌러주세요.",
+                null)
+        );
+
+        chatAdapter.notifyDataSetChanged();
+
+        // 마이크 버튼 클릭
         btnMic.setOnClickListener(v -> {
-            if (checkAudioPermission())
-                startSpeechRecognition();
+            if (checkAudioPermission()) startSpeechRecognition();
+        });
+
+        // 종료 버튼
+        btnFinishChat.setOnClickListener(v -> goToDiaryResult());
+
+        // 로고 클릭 시 종료 다이얼로그
+        findViewById(R.id.layout_logo).setOnClickListener(v -> showExitConfirmDialog());
+    }
+
+    // =====================================
+    //       음성 인식 권한 체크
+    // =====================================
+    private boolean checkAudioPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.RECORD_AUDIO}, 100);
+            return false;
+        }
+        return true;
+    }
+
+    private void startSpeechRecognition() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");
+        speechLauncher.launch(intent);
+    }
+
+    // =====================================
+    //          사용자 답변 처리
+    // =====================================
+    public void addUserAnswer(String text, String inputType) {
+
+        // 마지막 "답변 입력칸"을 찾아 교체
+        int lastAnsIdx = -1;
+        for (int i = messageList.size() - 1; i >= 0; i--) {
+            if (messageList.get(i).getViewType() == ChatMessage.VIEW_TYPE_USER_ANSWER) {
+                lastAnsIdx = i;
+                break;
+            }
+        }
+
+        if (lastAnsIdx != -1) {
+            messageList.set(lastAnsIdx, new ChatMessage(ChatMessage.VIEW_TYPE_USER_ANSWER, text, null));
+            chatAdapter.notifyItemChanged(lastAnsIdx);
+        }
+
+        answerCount++;
+        if (answerCount >= MIN_ANSWERS) {
+            btnFinishChat.setVisibility(View.VISIBLE);
+            btnFinishChat.setEnabled(true);
+            btnFinishChat.setAlpha(1f);
+        }
+
+        // 서버로 전송
+        sendUserMessageToServer(text, inputType);
+    }
+
+    // =====================================
+    //          서버로 답변 전송
+    // =====================================
+    private void sendUserMessageToServer(String content, String inputType) {
+
+        ChatMessageRequest body = new ChatMessageRequest(sessionId, inputType, content);
+
+        ApiService api = RetrofitClient.getApiService();
+
+        api.sendUserMessage(body).enqueue(new Callback<ChatMessageResponse>() {
+            @Override
+            public void onResponse(Call<ChatMessageResponse> call, Response<ChatMessageResponse> response) {
+
+                if (!response.isSuccessful()) {
+                    Log.e("Chatbot", "❌ 실패 response=" + response.code());
+                    return;
+                }
+
+                ChatMessageResponse res = response.body();
+
+                if (res == null) return;
+
+                // 1) 질문이 더 남아있는 경우 next_question 표시
+                if (!res.completed) {
+                    addNextQuestion(res.next_question);
+                }
+                // 2) 일기가 완성된 경우 → 결과 화면 이동
+                else {
+                    goToDiaryResultWithData(res);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ChatMessageResponse> call, Throwable t) {
+                Log.e("Chatbot", "🚨 서버 오류: " + t.getMessage());
+            }
         });
     }
 
-    // ----------------------------------------------------------------------------------------
-    // 종료 확인 다이얼로그
+    // =====================================
+    //         다음 질문 UI 추가
+    // =====================================
+    private void addNextQuestion(String question) {
+        messageList.add(new ChatMessage(ChatMessage.VIEW_TYPE_AI_QUESTION, question, null));
+        messageList.add(new ChatMessage(ChatMessage.VIEW_TYPE_USER_ANSWER,
+                "답변을 입력하려면 여기를 눌러주세요.", null));
+
+        chatAdapter.notifyDataSetChanged();
+        chatRecyclerView.scrollToPosition(messageList.size() - 1);
+    }
+
+    // =====================================
+    //        일기 완성 → 화면 이동
+    // =====================================
+    private void goToDiaryResultWithData(ChatMessageResponse res) {
+
+        Intent intent = new Intent(this, DiaryResultActivity.class);
+        intent.putExtra("diary_title", res.diary.title);
+        intent.putExtra("diary_content", res.diary.content);
+        intent.putExtra("photo_uri", imageUriString);
+        startActivity(intent);
+    }
+
+    private void goToDiaryResult() {
+        // 강제로 만드는 임시 버전 (질문이 3개 채워졌을 때)
+        Intent intent = new Intent(this, DiaryResultActivity.class);
+        intent.putExtra("diary_title", "AI가 생성한 제목");
+        intent.putExtra("diary_content", "입력한 답변을 기반으로 일기를 자동 생성합니다.");
+        startActivity(intent);
+    }
+
+    // =====================================
+    //       종료 확인 다이얼로그
+    // =====================================
     private void showExitConfirmDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_exit_chatbot, null);
@@ -126,9 +259,6 @@ public class ChatbotActivity extends AppCompatActivity {
 
         btnYes.setOnClickListener(v -> {
             dialog.dismiss();
-            Intent intent = new Intent(this, MainActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
             finish();
         });
 
@@ -137,129 +267,13 @@ public class ChatbotActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // ----------------------------------------------------------------------------------------
-    // 음성 인식 시작
-    private void startSpeechRecognition() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "말씀해주세요...");
-        speechLauncher.launch(intent);
-    }
+    // =====================================
+    //     사용자 입력 커스텀 다이얼로그
+    // =====================================
+    public void showCustomInputDialog(String title,
+                                      String defaultText,
+                                      OnSaveListener listener) {
 
-    private boolean checkAudioPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.RECORD_AUDIO}, 100);
-            return false;
-        }
-        return true;
-    }
-
-    // ----------------------------------------------------------------------------------------
-    // 사용자 답변 처리
-    public void addUserAnswer(String text) {
-        addUserAnswer(text, "text");
-    }
-
-    public void addUserAnswer(String text, String inputType) {
-        int lastUserIndex = -1;
-        for (int i = messageList.size() - 1; i >= 0; i--) {
-            if (messageList.get(i).getViewType() == ChatMessage.VIEW_TYPE_USER_ANSWER) {
-                lastUserIndex = i;
-                break;
-            }
-        }
-
-        if (lastUserIndex != -1) {
-            messageList.set(lastUserIndex, new ChatMessage(ChatMessage.VIEW_TYPE_USER_ANSWER, text, null));
-            chatAdapter.notifyItemChanged(lastUserIndex);
-            chatRecyclerView.scrollToPosition(lastUserIndex);
-        }
-
-        answerCount++;
-        if (answerCount >= MIN_ANSWERS) {
-            btnFinishChat.setEnabled(true);
-            btnFinishChat.setVisibility(View.VISIBLE);
-            btnFinishChat.setAlpha(1f);
-        }
-
-        // 서버 전달
-        sendMessageToServer(text, inputType);
-
-        // 다음 질문 출력(임시)
-        chatRecyclerView.postDelayed(() -> {
-            String nextQ = generateNextQuestion();
-            messageList.add(new ChatMessage(ChatMessage.VIEW_TYPE_AI_QUESTION, nextQ, null));
-            messageList.add(new ChatMessage(ChatMessage.VIEW_TYPE_USER_ANSWER, "답변을 입력하려면 여기를 눌러주세요.", null));
-            chatAdapter.notifyDataSetChanged();
-            chatRecyclerView.scrollToPosition(messageList.size() - 1);
-        }, 600);
-    }
-
-    private String generateNextQuestion() {
-        String[] sampleQuestions = {
-                "어디에서 사진을 찍었나요?",
-                "누구와 함께 있었나요?",
-                "기분은 어땠나요?",
-                "이 사진에서 가장 기억에 남는 부분은 무엇인가요?"
-        };
-        return sampleQuestions[(int) (Math.random() * sampleQuestions.length)];
-    }
-
-    // ----------------------------------------------------------------------------------------
-    // 서버로 사용자 답변 전송
-    private void sendMessageToServer(String text, String inputType) {
-        ApiService api = RetrofitClient.getApiService();
-
-        JsonObject body = new JsonObject();
-        body.addProperty("session_id", sessionId);
-        body.addProperty("input_type", inputType);
-        body.addProperty("content", text);
-
-        api.sendUserMessage(body).enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (!response.isSuccessful()) {
-                    Log.e("Chatbot", " 서버 응답 실패: " + response.code());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e("Chatbot", "🚨 서버 전송 실패: " + t.getMessage());
-            }
-        });
-    }
-
-    // ----------------------------------------------------------------------------------------
-    // 일기 결과 페이지로 이동
-    private void goToDiaryResult() {
-        ArrayList<String> answers = new ArrayList<>();
-        for (ChatMessage msg : messageList) {
-            if (msg.getViewType() == ChatMessage.VIEW_TYPE_USER_ANSWER &&
-                    !msg.getText().equals("답변을 입력하려면 여기를 눌러주세요.")) {
-                answers.add(msg.getText());
-            }
-        }
-
-        Intent intent = new Intent(this, DiaryResultActivity.class);
-        intent.putStringArrayListExtra("answers", answers);
-
-        String imageUri = getIntent().getStringExtra("selected_photo_uri");
-        intent.putExtra("photo_uri", imageUri);
-
-        // 임시 데이터 (나중에 서버 연동 예정)
-        intent.putExtra("diary_title", "AI가 생성한 제목");
-        intent.putExtra("diary_content", String.join("\n", answers));
-
-        startActivity(intent);
-    }
-
-    // ----------------------------------------------------------------------------------------
-    // 수정용 다이얼로그
-    void showCustomInputDialog(String title, String defaultText, OnSaveListener listener) {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_custom, null);
         TextView tvTitle = dialogView.findViewById(R.id.tv_dialog_title);
         EditText etInput = dialogView.findViewById(R.id.et_dialog_input);
@@ -268,8 +282,8 @@ public class ChatbotActivity extends AppCompatActivity {
 
         tvTitle.setText(title);
 
-        if (defaultText.equals("답변을 입력하려면 여기를 눌러주세요.") || defaultText.isEmpty()) {
-            etInput.setHint(defaultText);
+        if (defaultText == null || defaultText.equals("답변을 입력하려면 여기를 눌러주세요.")) {
+            etInput.setHint("답변을 입력하려면 여기를 눌러주세요.");
             etInput.setText("");
         } else {
             etInput.setText(defaultText);
