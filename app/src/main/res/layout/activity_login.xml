@@ -115,9 +115,8 @@
         android:layout_width="277dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="회원가입"
         android:gravity="center"
+        android:text="회원가입"
         android:textColor="#000000"
-        android:textSize="20sp"
-        />
+        android:textSize="20sp" />
 </LinearLayout>
