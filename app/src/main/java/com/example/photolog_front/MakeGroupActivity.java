@@ -1,12 +1,12 @@
 package com.example.photolog_front;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -20,7 +20,8 @@ public class MakeGroupActivity extends AppCompatActivity {
 
     private TextView errorTextView;
     private TextView groupCodeTextView;
-    private LinearLayout groupCodeLayout;  // 그룹 코드 박스(전체 레이아웃)
+    private LinearLayout groupCodeLayout;  // 그룹 코드 박스
+    private LinearLayout layoutLogo;       // ← 로고 레이아웃 추가
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +29,8 @@ public class MakeGroupActivity extends AppCompatActivity {
         setContentView(R.layout.activity_make_group);
 
         // XML 연결
+        layoutLogo = findViewById(R.id.layout_logo);  // ← 로고 연결
+
         groupNameEditText = findViewById(R.id.group_name);
         maxMemberEditText = findViewById(R.id.max_member);
         createGroupBtn = findViewById(R.id.btnLogin);
@@ -36,16 +39,18 @@ public class MakeGroupActivity extends AppCompatActivity {
         groupCodeTextView = findViewById(R.id.groupCode);
         groupCodeLayout = findViewById(R.id.groupCodeLayout);
 
-        // 처음에는 그룹 코드 박스를 숨김
+        // 처음에는 그룹 코드 박스 숨김
         groupCodeLayout.setVisibility(View.GONE);
 
-        // 버튼 클릭 리스너
-        createGroupBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                checkAndGenerateCode();
-            }
+        // 로고 클릭 → 메인 페이지 이동
+        layoutLogo.setOnClickListener(v -> {
+            Intent intent = new Intent(MakeGroupActivity.this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
         });
+
+        // 버튼 클릭 리스너
+        createGroupBtn.setOnClickListener(v -> checkAndGenerateCode());
     }
 
     // 입력 체크 + 코드 생성 메서드
