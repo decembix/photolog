@@ -77,7 +77,7 @@
 
     <!-- 아이디/비밀번호 찾기 -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="280dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:orientation="horizontal"
@@ -88,63 +88,36 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="아이디 찾기"
-            android:textSize="13sp"
+            android:textSize="20sp"
             android:textColor="#000000"/>
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:text="  |  "
-            android:textSize="13sp"
-            android:textColor="#000000"/>
+            android:textColor="#000000"
+            android:textSize="20sp" />
 
         <TextView
             android:id="@+id/tvFindPassword"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="비밀번호 찾기"
-            android:textSize="13sp"
+            android:textSize="20sp"
             android:textColor="#000000"/>
     </LinearLayout>
 
-    <!-- SNS 로그인 아이콘 3개 -->
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:orientation="horizontal"
-        android:gravity="center">
 
-        <ImageView
-            android:id="@+id/ivNaver"
-            android:layout_width="35dp"
-            android:layout_height="35dp"
-            android:layout_marginHorizontal="8dp"
-            android:src="@drawable/ic_naver"/>
-
-        <ImageView
-            android:id="@+id/ivKakao"
-            android:layout_width="35dp"
-            android:layout_height="35dp"
-            android:layout_marginHorizontal="8dp"
-            android:src="@drawable/ic_kakao"/>
-
-        <ImageView
-            android:id="@+id/ivGoogle"
-            android:layout_width="35dp"
-            android:layout_height="35dp"
-            android:layout_marginHorizontal="8dp"
-            android:src="@drawable/ic_google"/>
-    </LinearLayout>
 
     <!-- 회원가입 -->
     <TextView
         android:id="@+id/tvJoin"
-        android:layout_width="wrap_content"
+        android:layout_width="277dp"
         android:layout_height="wrap_content"
-        android:text="회원 가입"
-        android:textSize="15sp"
-        android:textStyle="bold"
+        android:layout_marginTop="10dp"
+        android:text="회원가입"
+        android:gravity="center"
         android:textColor="#000000"
-        android:layout_marginTop="10dp"/>
+        android:textSize="20sp"
+        />
 </LinearLayout>
