@@ -49,6 +49,7 @@
 
     <!-- 입력 필드 -->
     <EditText
+        android:id="@+id/signName"
         android:layout_gravity="center_horizontal"
         android:layout_width="280dp"
         android:layout_height="45dp"
@@ -58,6 +59,7 @@
         android:padding="10dp"/>
 
     <EditText
+        android:id="@+id/signId"
         android:layout_gravity="center_horizontal"
         android:layout_width="280dp"
         android:layout_height="45dp"
@@ -67,6 +69,7 @@
         android:padding="10dp"/>
 
     <EditText
+        android:id="@+id/signPwd"
         android:layout_gravity="center_horizontal"
         android:layout_width="280dp"
         android:layout_height="45dp"
@@ -140,7 +143,7 @@
 
     <!-- 회원가입 버튼 -->
     <android.widget.Button
-        android:id="@+id/btnLogin"
+        android:id="@+id/btnSignup"
         android:layout_gravity="center_horizontal"
         android:layout_width="280dp"
         android:layout_height="50dp"
