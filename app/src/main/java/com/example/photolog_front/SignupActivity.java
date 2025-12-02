@@ -15,7 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class SignupActivity extends AppCompatActivity {
 
     CheckBox chkAll, chkUse, chkPrivacy, chkAd;
-    EditText signName, signId, signPwd;
+    EditText signName, signId, signPwd, signPwdCheck;
     TextView tvError;
     Button btnSignup;
 
@@ -32,8 +32,9 @@ public class SignupActivity extends AppCompatActivity {
 
         // 입력칸
         signName = findViewById(R.id.signName);
-        signId = findViewById(R.id.signId);
+        signId = findViewById(R.id.signId);   // ★ 수정됨
         signPwd = findViewById(R.id.signPwd);
+        signPwdCheck = findViewById(R.id.signPwdCheck); // ★ 비밀번호 확인 추가
 
         // 에러 문구
         tvError = findViewById(R.id.tvError);
@@ -76,19 +77,28 @@ public class SignupActivity extends AppCompatActivity {
         String name = signName.getText().toString().trim();
         String id = signId.getText().toString().trim();
         String pw = signPwd.getText().toString().trim();
+        String pwCheck = signPwdCheck.getText().toString().trim();
 
-        if (name.isEmpty()|| id.isEmpty() || pw.isEmpty()) {
+        // 빈칸 체크
+        if (name.isEmpty() || id.isEmpty() || pw.isEmpty() || pwCheck.isEmpty()) {
             tvError.setText("모든 칸을 채워주세요!");
             tvError.setVisibility(View.VISIBLE);
-
             Toast.makeText(this, "모든 칸을 채워주세요!", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // 비밀번호 일치 확인
+        if (!pw.equals(pwCheck)) {
+            tvError.setText("비밀번호가 일치하지 않습니다.");
+            tvError.setVisibility(View.VISIBLE);
+            Toast.makeText(this, "비밀번호 확인 필요!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 필수 약관 체크
         if (!chkUse.isChecked() || !chkPrivacy.isChecked()) {
             tvError.setText("필수 약관에 동의해야 합니다.");
             tvError.setVisibility(View.VISIBLE);
-
             Toast.makeText(this, "필수 약관 동의 필요!", Toast.LENGTH_SHORT).show();
             return;
         }
