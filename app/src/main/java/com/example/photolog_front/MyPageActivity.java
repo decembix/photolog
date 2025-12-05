@@ -9,6 +9,17 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.photolog_front.model.UserResponse;
+import com.example.photolog_front.model.FamilyMemberResponse;
+import com.example.photolog_front.network.ApiService;
+import com.example.photolog_front.network.RetrofitClient;
+
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class MyPageActivity extends AppCompatActivity {
 
     // 메인 프로필 & 유저 정보
@@ -84,60 +95,100 @@ public class MyPageActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // 가족 상세 페이지 이동 (원한다면 구현)
+        // 가족 상세 페이지 이동 준비 (선택 구현 가능)
         familyBox1Container.setOnClickListener(v -> {
-            // Example:
-            // Intent intent = new Intent(MyPageActivity.this, FamilyDetailActivity.class);
-            // startActivity(intent);
+            // TODO: 가족 상세 페이지 이동
         });
 
         familyBox2Container.setOnClickListener(v -> {
-            // Example:
-            // Intent intent = new Intent(MyPageActivity.this, FamilyDetailActivity.class);
-            // startActivity(intent);
+            // TODO: 가족 상세 페이지 이동
         });
     }
 
-    // 실제 데이터 로딩
+    // 사용자 정보 로딩
     private void loadUserData() {
 
-        // TODO: 서버/DB에서 실제 데이터 가져오기
-        // ---- 여기서 가족 수만 바꿔주면 동작 테스트 가능 ----
-        int familyCount = 0;    // ← ★ 테스트: 0, 1, 2 넣어보기
+        ApiService api = RetrofitClient.getApiService(this);
 
-        // 유저 메인 정보
-        tvNickname.setText("수희");
-        tvDiaryCount.setText("작성한 일기 수 : 12");
-        tvFamilyCount.setText("추가한 가족 수 : " + familyCount);
+        api.getUserInfo().enqueue(new Callback<UserResponse>() {
+            @Override
+            public void onResponse(Call<UserResponse> call, Response<UserResponse> response) {
 
-        // ---- 가족 수 조건으로 UI 조작 ----
-        if (familyCount == 0) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    return;
+                }
 
-            familyBox1Container.setVisibility(View.GONE);
-            familyBox2Container.setVisibility(View.GONE);
+                UserResponse user = response.body();
 
-            layoutAddFamily.setVisibility(View.VISIBLE);
+                // ① 사용자 정보 UI 반영
+                tvNickname.setText(user.name);
+                tvDiaryCount.setText("작성한 일기 수 : " + user.diaries_count);
+                tvFamilyCount.setText("추가한 가족 수 : " + user.families.size());
 
-        } else if (familyCount == 1) {
+                // ② 가족 수 UI 조절
+                int familyCount = user.families.size();
 
-            familyBox1Container.setVisibility(View.VISIBLE);
-            familyBox2Container.setVisibility(View.GONE);
-            layoutAddFamily.setVisibility(View.GONE);
+                if (familyCount == 0) {
 
-            tvNicknameFamily1.setText("엄마");
-            tvDiaryCountFamily1.setText("작성한 일기 수 : 5");
+                    // 가족 없음 → 박스 숨기고 "가족 추가" 버튼 표시
+                    layoutAddFamily.setVisibility(View.VISIBLE);
+                    familyBox1Container.setVisibility(View.GONE);
+                    familyBox2Container.setVisibility(View.GONE);
+                    return;
+                }
 
-        } else {
+                // 가족 1명 이상
+                if (familyCount >= 1) {
+                    UserResponse.FamilyInfo f1 = user.families.get(0);
+                    loadFamilyMembers(f1.id, 1);
+                }
 
-            familyBox1Container.setVisibility(View.VISIBLE);
-            familyBox2Container.setVisibility(View.VISIBLE);
-            layoutAddFamily.setVisibility(View.GONE);
+                // 가족 2명 이상
+                if (familyCount >= 2) {
+                    UserResponse.FamilyInfo f2 = user.families.get(1);
+                    loadFamilyMembers(f2.id, 2);
+                }
+            }
 
-            tvNicknameFamily1.setText("엄마");
-            tvDiaryCountFamily1.setText("작성한 일기 수 : 5");
+            @Override
+            public void onFailure(Call<UserResponse> call, Throwable t) { }
+        });
+    }
 
-            tvNicknameFamily2.setText("아빠");
-            tvDiaryCountFamily2.setText("작성한 일기 수 : 4");
-        }
+    // 가족 구성원 로딩
+    private void loadFamilyMembers(int familyId, int boxIndex) {
+
+        ApiService api = RetrofitClient.getApiService(this);
+
+        api.getFamilyMembers(familyId).enqueue(new Callback<List<FamilyMemberResponse>>() {
+            @Override
+            public void onResponse(Call<List<FamilyMemberResponse>> call, Response<List<FamilyMemberResponse>> response) {
+
+                if (!response.isSuccessful() || response.body() == null) return;
+
+                List<FamilyMemberResponse> members = response.body();
+
+                if (members.size() == 0) return;
+
+                // 관리자 또는 첫 번째 멤버 사용
+                FamilyMemberResponse target = members.get(0);
+
+                if (boxIndex == 1) {
+                    familyBox1Container.setVisibility(View.VISIBLE);
+                    tvNicknameFamily1.setText(target.name);
+                    tvDiaryCountFamily1.setText("작성한 일기 수 : " + target.diaries_count);
+                } else {
+                    familyBox2Container.setVisibility(View.VISIBLE);
+                    tvNicknameFamily2.setText(target.name);
+                    tvDiaryCountFamily2.setText("작성한 일기 수 : " + target.diaries_count);
+                }
+
+                // 가족 추가 버튼 숨김
+                layoutAddFamily.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onFailure(Call<List<FamilyMemberResponse>> call, Throwable t) { }
+        });
     }
 }

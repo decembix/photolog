@@ -9,12 +9,17 @@ import com.example.photolog_front.model.LoginRequest;
 import com.example.photolog_front.model.LoginResponse;
 import com.example.photolog_front.model.SignupRequest;
 import com.example.photolog_front.model.SignupResponse;
+import com.example.photolog_front.model.UserResponse;
+import com.example.photolog_front.model.FamilyMemberResponse;
 import com.google.gson.JsonObject;
+
+import java.util.List;
 
 import okhttp3.MultipartBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.Part;
@@ -57,7 +62,17 @@ public interface ApiService {
     // ---------------------- 가족 기능 ----------------------
     @POST("/families")
     Call<Object> createFamily(@Body FamilyCreateRequest request);
+    @GET("/me")
+    Call<UserResponse> getUserInfo();
 
     @POST("/families/join")
     Call<Object> joinFamily(@Body FamilyJoinRequest request);
+
+
+    //----마이페이지
+    @GET("/families/{family_id}/members")
+    Call<List<FamilyMemberResponse>> getFamilyMembers(
+            @Path("family_id") int familyId
+    );
+
 }
