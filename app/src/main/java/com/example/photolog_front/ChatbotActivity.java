@@ -74,7 +74,7 @@ public class ChatbotActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chatbot);
 
         // ====== Intent 데이터 받아오기 ======
-        int sessionId = getIntent().getIntExtra("session_id", -1);
+        sessionId = String.valueOf(getIntent().getIntExtra("session_id", -1));
         String firstQuestion = getIntent().getStringExtra("question");
         imageUriString = getIntent().getStringExtra("selected_photo_uri");
 
