@@ -10,13 +10,16 @@
         android:id="@+id/tv_user_answer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+
         android:background="@drawable/chat_bubble_user"
-        android:padding="12dp"
-        android:fontFamily="@font/paperlogy_7"
-        android:text="사용자 답변"
-        android:textSize="28sp"
-        android:textColor="#5D3316"
-        android:layout_marginEnd="6dp"
-        android:elevation="2dp"
+        android:paddingLeft="20dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:paddingRight="20dp"
+        android:layout_gravity="center"
+        android:fontFamily="@font/paperlogy_5"
+        android:textSize="30sp"
+        android:text="AI가 생성한 질문ㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇㅇ"
+        android:textColor="@color/black"
         />
 </LinearLayout>
