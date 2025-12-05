@@ -57,7 +57,15 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
         btnSend = findViewById(R.id.btn_send);
 
         api = RetrofitClient.getApiService(this);
+
+        // --------------------------
+        // 🔥 Intent로 전달된 데이터 받기
+        // --------------------------
         postId = getIntent().getIntExtra("post_id", -1);
+        String title = getIntent().getStringExtra("title");
+        String author = getIntent().getStringExtra("author");
+        String date = getIntent().getStringExtra("date");
+        String content = getIntent().getStringExtra("content");
 
         if (postId == -1) {
             Toast.makeText(this, "게시물을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
@@ -65,17 +73,16 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
             return;
         }
 
-        Diary diary = (Diary) getIntent().getSerializableExtra("diary");
+        // --------------------------
+        // 🔥 UI에 데이터 반영
+        // --------------------------
+        tvTitle.setText(title);
+        tvInfo.setText(author + " · " + formatDate(date));
+        tvContent.setText(content);
 
-        tvTitle.setText(diary.getTitle());
-        tvInfo.setText(diary.getAuthor() + " | " + diary.getDate());
-        tvContent.setText(diary.getContent());
+        // 현재는 이미지가 없으므로 기본 이미지 유지
 
-        if (diary.getImageUri() != null)
-            imgDiary.setImageURI(Uri.parse(diary.getImageUri()));
-        else if (diary.getImageRes() != 0)
-            imgDiary.setImageResource(diary.getImageRes());
-
+        // 뒤로가기 버튼
         findViewById(R.id.btn_back_to_list).setOnClickListener(v -> finish());
 
         // 댓글 불러오기
@@ -88,6 +95,18 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
         etComment.setOnClickListener(v -> {
             showCommentDialog("댓글 달기", etComment.getText().toString());
         });
+    }
+
+    // -------------------------
+    // 날짜 형식 yyyy-MM-dd로 변환
+    // -------------------------
+    private String formatDate(String datetime) {
+        try {
+            // "2025-12-02T10:20:15" → "2025-12-02"
+            return datetime.substring(0, 10);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     // -------------------------

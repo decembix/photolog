@@ -289,18 +289,19 @@ public class FamilyDiaryActivity extends AppCompatActivity {
         diaryLayout.addView(rightLayout);
         row.addView(diaryLayout);
 
-        // 클릭 시 상세 페이지 이동
         row.setOnClickListener(v -> {
             Intent intent = new Intent(FamilyDiaryActivity.this, FamilyDiaryDetailActivity.class);
             intent.putExtra("post_id", post.id);
             intent.putExtra("author", post.user_name);
-            intent.putExtra("title", getPostTitle(post));
+            intent.putExtra("date", post.created_at);
+            intent.putExtra("title", getPostTitle(post));  // 제목 생성 함수라면 그대로
             intent.putExtra("content", post.content);
             if (finalImageUrl != null) {
                 intent.putExtra("image_url", finalImageUrl);
             }
             startActivity(intent);
         });
+
 
         return row;
     }
