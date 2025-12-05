@@ -180,7 +180,7 @@ public class DiaryGenerationActivity extends AppCompatActivity {
             MultipartBody.Part filePart =
                     MultipartBody.Part.createFormData("file", "photo.png", requestFile);
 
-            ApiService api = RetrofitClient.getApiService();
+            ApiService api = RetrofitClient.getApiService(this);
 
             api.uploadPhoto("Bearer " + token, filePart)
                     .enqueue(new Callback<DiaryStartResponse>() {

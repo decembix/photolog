@@ -17,6 +17,7 @@ import retrofit2.http.Header;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.Part;
+import retrofit2.http.Path;
 
 public interface ApiService {
     @POST("/signup")
@@ -36,6 +37,11 @@ public interface ApiService {
     @POST("/chat")
     Call<ChatMessageResponse> sendUserMessage(
             @Body ChatMessageRequest body  // ← 여기!!!
+    );
+    @POST("/sessions/{session_id}/answer")
+    Call<ChatMessageResponse> sendChatAnswer(
+            @Path("session_id") int sessionId,
+            @Body ChatMessageRequest request
     );
 
 

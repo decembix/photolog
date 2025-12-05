@@ -169,44 +169,47 @@ public class ChatbotActivity extends AppCompatActivity {
         }
 
         // 서버로 전송
-        sendUserMessageToServer(text, inputType);
+        sendUserMessageToServer(text);
     }
 
     // =====================================
     //          서버로 답변 전송
     // =====================================
-    private void sendUserMessageToServer(String content, String inputType) {
+    private void sendUserMessageToServer(String content) {
 
-        ChatMessageRequest body = new ChatMessageRequest(sessionId, inputType, content);
+        int sid = Integer.parseInt(sessionId);  // String → int
 
-        ApiService api = RetrofitClient.getApiService();
+        ChatMessageRequest body = new ChatMessageRequest(content);
+        ApiService api = RetrofitClient.getApiService(this);
 
-        api.sendUserMessage(body).enqueue(new Callback<ChatMessageResponse>() {
+        api.sendChatAnswer(sid, body).enqueue(new Callback<ChatMessageResponse>() {
             @Override
-            public void onResponse(Call<ChatMessageResponse> call, Response<ChatMessageResponse> response) {
+            public void onResponse(Call<ChatMessageResponse> call,
+                                   Response<ChatMessageResponse> response) {
 
                 if (!response.isSuccessful()) {
-                    Log.e("Chatbot", "❌ 실패 response=" + response.code());
+                    Log.e("Chatbot", "서버 오류: " + response.code());
                     return;
                 }
 
                 ChatMessageResponse res = response.body();
 
-                if (res == null) return;
-
-                // 1) 질문이 더 남아있는 경우 next_question 표시
                 if (!res.completed) {
+                    // 다음 질문 생성
                     addNextQuestion(res.next_question);
-                }
-                // 2) 일기가 완성된 경우 → 결과 화면 이동
-                else {
-                    goToDiaryResultWithData(res);
+
+                } else {
+                    // 일기 완성 → DiaryResultActivity 이동
+                    Intent intent = new Intent(ChatbotActivity.this, DiaryResultActivity.class);
+                    intent.putExtra("diary_title", res.diary.title);
+                    intent.putExtra("diary_content", res.diary.content);
+                    startActivity(intent);
                 }
             }
 
             @Override
             public void onFailure(Call<ChatMessageResponse> call, Throwable t) {
-                Log.e("Chatbot", "🚨 서버 오류: " + t.getMessage());
+                Log.e("Chatbot", "전송 실패: " + t.getMessage());
             }
         });
     }

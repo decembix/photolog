@@ -130,5 +130,8 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
             if (msg.getText() != null)
                 tv.setText(msg.getText());
         }
+
     }
+
 }
+
