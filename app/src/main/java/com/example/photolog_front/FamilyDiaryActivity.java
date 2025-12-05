@@ -20,6 +20,7 @@ import com.example.photolog_front.model.FamilyItem;
 import com.example.photolog_front.model.FamilyPostItem;
 import com.example.photolog_front.network.ApiService;
 import com.example.photolog_front.network.RetrofitClient;
+import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -211,7 +212,7 @@ public class FamilyDiaryActivity extends AppCompatActivity {
         TextView author = new TextView(this);
         author.setText(post.user_name != null ? post.user_name : "");
         author.setTextColor(Color.parseColor("#5D3316"));
-        author.setTextSize(18); // 18sp
+        author.setTextSize(18);
         author.setGravity(Gravity.CENTER);
         if (fontPaper6 != null) {
             author.setTypeface(fontPaper6, Typeface.BOLD);
@@ -229,12 +230,32 @@ public class FamilyDiaryActivity extends AppCompatActivity {
         diaryLayout.setLayoutParams(new TableRow.LayoutParams(
                 0, TableRow.LayoutParams.WRAP_CONTENT, 3f));
 
-        // 이미지 (지금은 샘플 이미지)
+        // ✅ 서버 이미지 로딩
         ImageView img = new ImageView(this);
         int size = (int) (getResources().getDisplayMetrics().density * 90);
-        img.setImageResource(R.drawable.sample);  // 필요하면 서버 이미지 URL 연동 가능
         img.setScaleType(ImageView.ScaleType.CENTER_CROP);
         img.setLayoutParams(new LinearLayout.LayoutParams(size, size));
+
+        String imageUrl = null;
+        if (post.photo != null && post.photo.file_path != null) {
+            String cleanedPath = post.photo.file_path.replace("./", "/");
+
+            String imageBaseUrl = "http://54.180.51.124:8000";
+
+            imageUrl = imageBaseUrl + cleanedPath;  // 예: http://...:8000/uploads/nahee12/xxx.png
+        }
+        final String finalImageUrl = imageUrl;
+
+        if (finalImageUrl != null) {
+            Glide.with(this)
+                    .load(finalImageUrl)
+                    .placeholder(R.drawable.sample)
+                    .error(R.drawable.sample)
+                    .into(img);
+        } else {
+            img.setImageResource(R.drawable.sample);
+        }
+
         diaryLayout.addView(img);
 
         // 제목 + 내용
@@ -242,10 +263,9 @@ public class FamilyDiaryActivity extends AppCompatActivity {
         rightLayout.setOrientation(LinearLayout.VERTICAL);
         rightLayout.setPadding(12, 0, 0, 0);
 
-        // ─ 제목 ─
         TextView title = new TextView(this);
         title.setText(getPostTitle(post));
-        title.setTextSize(18); // 18sp
+        title.setTextSize(18);
         title.setTextColor(Color.parseColor("#5D3316"));
         if (fontPaper6 != null) {
             title.setTypeface(fontPaper6, Typeface.BOLD);
@@ -253,10 +273,9 @@ public class FamilyDiaryActivity extends AppCompatActivity {
             title.setTypeface(title.getTypeface(), Typeface.BOLD);
         }
 
-        // ─ 내용 ─
         TextView content = new TextView(this);
         content.setText(post.content != null ? post.content : "");
-        content.setTextSize(16); // 16sp
+        content.setTextSize(16);
         content.setTextColor(Color.parseColor("#5D3316"));
         content.setMaxLines(2);
         content.setEllipsize(TextUtils.TruncateAt.END);
@@ -270,13 +289,16 @@ public class FamilyDiaryActivity extends AppCompatActivity {
         diaryLayout.addView(rightLayout);
         row.addView(diaryLayout);
 
-        // 🔥 클릭 시 상세 페이지 이동
+        // 클릭 시 상세 페이지 이동
         row.setOnClickListener(v -> {
             Intent intent = new Intent(FamilyDiaryActivity.this, FamilyDiaryDetailActivity.class);
-            intent.putExtra("post_id", post.id);                 // Detail에서 getIntExtra("post_id", -1)로 받는 값
+            intent.putExtra("post_id", post.id);
             intent.putExtra("author", post.user_name);
             intent.putExtra("title", getPostTitle(post));
             intent.putExtra("content", post.content);
+            if (finalImageUrl != null) {
+                intent.putExtra("image_url", finalImageUrl);
+            }
             startActivity(intent);
         });
 
