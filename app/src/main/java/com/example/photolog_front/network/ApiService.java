@@ -11,6 +11,7 @@ import com.example.photolog_front.model.SignupRequest;
 import com.example.photolog_front.model.SignupResponse;
 import com.example.photolog_front.model.UserResponse;
 import com.example.photolog_front.model.FamilyMemberResponse;
+import com.example.photolog_front.model.MyDiaryListResponse;
 import com.google.gson.JsonObject;
 
 import java.util.List;
@@ -74,5 +75,8 @@ public interface ApiService {
     Call<List<FamilyMemberResponse>> getFamilyMembers(
             @Path("family_id") int familyId
     );
+    @GET("/diaries")
+    Call<MyDiaryListResponse> getMyDiaries();
+
 
 }

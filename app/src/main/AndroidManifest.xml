@@ -64,6 +64,9 @@
         <activity android:name=".MyPageActivity"/>
         <activity android:name=".MakeGroupActivity"/>
         <activity android:name=".MakeGroupResponse" />
+        <activity android:name=".DiaryViewActivity" />
+        <activity android:name=".MyDiaryActivity" />
+
     </application>
 
 </manifest>
