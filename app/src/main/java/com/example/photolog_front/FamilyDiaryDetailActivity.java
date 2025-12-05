@@ -17,6 +17,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
+import com.bumptech.glide.Glide;  // ✅ 추가
 import com.example.photolog_front.model.FamilyCommentRequest;
 import com.example.photolog_front.model.FamilyCommentResponse;
 import com.example.photolog_front.network.ApiService;
@@ -67,6 +68,9 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
         String date = getIntent().getStringExtra("date");
         String content = getIntent().getStringExtra("content");
 
+        // ✅ 리스트에서 넘긴 이미지 URL 받기
+        String imageUrl = getIntent().getStringExtra("image_url");
+
         if (postId == -1) {
             Toast.makeText(this, "게시물을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
             finish();
@@ -80,7 +84,16 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
         tvInfo.setText(author + " · " + formatDate(date));
         tvContent.setText(content);
 
-        // 현재는 이미지가 없으므로 기본 이미지 유지
+        // ✅ 이미지 로딩 (URL 있으면 서버 이미지, 없으면 기본 이미지)
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(this)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.sample) // 로딩 중
+                    .error(R.drawable.sample)       // 실패 시
+                    .into(imgDiary);
+        } else {
+            imgDiary.setImageResource(R.drawable.sample);
+        }
 
         // 뒤로가기 버튼
         findViewById(R.id.btn_back_to_list).setOnClickListener(v -> finish());
