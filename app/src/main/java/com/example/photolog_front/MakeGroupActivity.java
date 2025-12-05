@@ -7,10 +7,17 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.Random;
+import com.example.photolog_front.model.FamilyCreateRequest;
+import com.example.photolog_front.network.ApiService;
+import com.example.photolog_front.network.RetrofitClient;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MakeGroupActivity extends AppCompatActivity {
 
@@ -20,16 +27,19 @@ public class MakeGroupActivity extends AppCompatActivity {
 
     private TextView errorTextView;
     private TextView groupCodeTextView;
-    private LinearLayout groupCodeLayout;  // 그룹 코드 박스
-    private LinearLayout layoutLogo;       // ← 로고 레이아웃 추가
+    private LinearLayout groupCodeLayout;
+    private LinearLayout layoutLogo;
+
+    // ⬇ ⬇ ⬇ 추가: "이미 그룹이 있어요" 텍스트
+    private TextView goJoinText;
+    // ⬆ ⬆ ⬆
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_make_group);
 
-        // XML 연결
-        layoutLogo = findViewById(R.id.layout_logo);  // ← 로고 연결
+        layoutLogo = findViewById(R.id.layout_logo);
 
         groupNameEditText = findViewById(R.id.group_name);
         maxMemberEditText = findViewById(R.id.max_member);
@@ -39,54 +49,79 @@ public class MakeGroupActivity extends AppCompatActivity {
         groupCodeTextView = findViewById(R.id.groupCode);
         groupCodeLayout = findViewById(R.id.groupCodeLayout);
 
-        // 처음에는 그룹 코드 박스 숨김
+        // ⬇ ⬇ ⬇ 추가: TextView 연결
+        goJoinText = findViewById(R.id.tvGoJoinDirect);
+        // ⬆ ⬆ ⬆
+
         groupCodeLayout.setVisibility(View.GONE);
 
-        // 로고 클릭 → 메인 페이지 이동
         layoutLogo.setOnClickListener(v -> {
             Intent intent = new Intent(MakeGroupActivity.this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
         });
 
-        // 버튼 클릭 리스너
-        createGroupBtn.setOnClickListener(v -> checkAndGenerateCode());
+        createGroupBtn.setOnClickListener(v -> createGroup());
+
+        // ⬇ ⬇ ⬇ "이미 그룹이 있어요" 클릭 → 초대코드 입력 화면 이동
+        goJoinText.setOnClickListener(v -> {
+            Intent intent = new Intent(MakeGroupActivity.this, MakeGroupResponse.class);
+            startActivity(intent);
+        });
+        // ⬆ ⬆ ⬆
     }
 
-    // 입력 체크 + 코드 생성 메서드
-    private void checkAndGenerateCode() {
+    private void createGroup() {
 
         String groupName = groupNameEditText.getText().toString().trim();
         String maxMember = maxMemberEditText.getText().toString().trim();
 
-        // 하나라도 비었을 경우 → 오류 문구 표시 + 코드 숨김
         if (groupName.isEmpty() || maxMember.isEmpty()) {
-            errorTextView.setVisibility(View.VISIBLE);  // 오류 문구 보이기
-            groupCodeLayout.setVisibility(View.GONE);   // 코드 숨기기
+            errorTextView.setVisibility(View.VISIBLE);
+            groupCodeLayout.setVisibility(View.GONE);
             return;
         }
 
-        // 모든 칸이 채워진 경우 → 오류 문구 숨기기
         errorTextView.setVisibility(View.GONE);
 
-        // 랜덤 6자리 코드 생성
-        String code = generateRandomCode(6);
-        groupCodeTextView.setText(code);
+        ApiService api = RetrofitClient.getApiService(this);
 
-        // 생성된 코드 보이기
-        groupCodeLayout.setVisibility(View.VISIBLE);
-    }
+        Toast.makeText(this, "가족 생성 중...", Toast.LENGTH_SHORT).show();
 
-    // 랜덤 영문 대문자 + 숫자 6자리 생성 함수
-    private String generateRandomCode(int length) {
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder();
+        api.createFamily(new FamilyCreateRequest(groupName))
+                .enqueue(new Callback<Object>() {
+                    @Override
+                    public void onResponse(Call<Object> call, Response<Object> response) {
 
-        for (int i = 0; i < length; i++) {
-            sb.append(chars.charAt(random.nextInt(chars.length())));
-        }
+                        if (response.isSuccessful()) {
 
-        return sb.toString();
+                            try {
+                                com.google.gson.Gson gson = new com.google.gson.Gson();
+                                com.google.gson.JsonObject json = gson.toJsonTree(response.body()).getAsJsonObject();
+
+                                String inviteCode = json.get("invite_code").getAsString();
+
+                                groupCodeTextView.setText(inviteCode);
+                                groupCodeLayout.setVisibility(View.VISIBLE);
+
+                                Toast.makeText(MakeGroupActivity.this, "가족 생성 완료!", Toast.LENGTH_SHORT).show();
+
+                            } catch (Exception e) {
+                                Toast.makeText(MakeGroupActivity.this, "응답 처리 오류", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        else if (response.code() == 400) {
+                            Toast.makeText(MakeGroupActivity.this, "중복된 그룹 이름입니다.", Toast.LENGTH_SHORT).show();
+                        }
+                        else {
+                            Toast.makeText(MakeGroupActivity.this, "서버 오류 (" + response.code() + ")", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Object> call, Throwable t) {
+                        Toast.makeText(MakeGroupActivity.this, "네트워크 오류", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 }

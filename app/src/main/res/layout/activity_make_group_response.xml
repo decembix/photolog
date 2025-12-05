@@ -53,29 +53,16 @@
 
             />
 
-
-        <!-- 아이디 입력 -->
-        <EditText
-            android:id="@+id/group_name"
-            android:layout_width="280dp"
-            android:layout_height="50dp"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/edittext_bg"
-            android:hint="그룹 이름"
-            android:paddingLeft="20dp"
-            android:textSize="17dp" />
-
-        <!-- 비밀번호 입력 -->
+        <!-- 초대코드 입력 -->
         <EditText
             android:id="@+id/max_member"
             android:layout_width="280dp"
             android:layout_height="50dp"
-            android:layout_marginTop="15dp"
+            android:layout_marginTop="30dp"
             android:background="@drawable/edittext_bg"
-            android:hint="최대 인원 수"
+            android:hint="초대코드 입력"
             android:inputType="textPassword"
             android:paddingLeft="20dp"
-
             android:textSize="17dp" />
 
         <!-- 오류 메시지 -->
@@ -96,56 +83,13 @@
             android:id="@+id/btnLogin"
             android:layout_width="280dp"
             android:layout_height="50dp"
-            android:layout_marginTop="15dp"
+            android:layout_marginTop="30dp"
             android:background="@drawable/login_button_bg"
-            android:text="그룹 생성하기"
+            android:text="초대코드 작성 완료"
             android:textColor="#FFFFFF"
             android:textSize="20dp" />
 
-        <TextView
-            android:id="@+id/tvGoJoinDirect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="15dp"
-            android:text="이미 그룹이 있어요 (초대코드 입력)"
-            android:textColor="#6A3E20"
-            android:textSize="15sp"
-            android:fontFamily="@font/paperlogy_5"
-            android:clickable="true"
-            android:focusable="true"
-            android:padding="6dp" />
-
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/groupCodeLayout"
-        android:layout_width="280dp"
-        android:layout_height="232dp"
-        android:layout_gravity="center"
-        android:layout_marginBottom="20dp"
-        android:background="@drawable/edittext_bg"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="그룹 코드"
-            android:textColor="#5C3A22"
-            android:textSize="20dp" />
-
-        <TextView
-            android:id="@+id/groupCode"
-            android:layout_width="240dp"
-            android:layout_height="70dp"
-            android:layout_margin="15dp"
-            android:background="@drawable/login_button_bg"
-            android:fontFamily="@font/paperlogy_6"
-            android:gravity="center"
-            android:text="000000"
-            android:textColor="#FFFFFF"
-            android:textSize="25dp" />
-
-    </LinearLayout>
 
 </LinearLayout>

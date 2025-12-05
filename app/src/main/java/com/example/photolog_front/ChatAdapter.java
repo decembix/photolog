@@ -31,15 +31,16 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
     @NonNull
     @Override
     public BaseViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
 
         if (viewType == ChatMessage.VIEW_TYPE_IMAGE) {
             View view = inflater.inflate(R.layout.item_chat_image, parent, false);
             return new ImageViewHolder(view);
+
         } else if (viewType == ChatMessage.VIEW_TYPE_AI_QUESTION) {
             View view = inflater.inflate(R.layout.item_chat_ai_question, parent, false);
             return new AiQuestionViewHolder(view);
+
         } else { // USER ANSWER
             View view = inflater.inflate(R.layout.item_chat_user_answer, parent, false);
             return new UserAnswerViewHolder(view);
@@ -56,13 +57,17 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
         return messageList.size();
     }
 
-    // ===== 공통 부모 =====
+    // -----------------------------
+    //  공통 ViewHolder 부모 클래스
+    // -----------------------------
     abstract static class BaseViewHolder extends RecyclerView.ViewHolder {
         BaseViewHolder(@NonNull View itemView) { super(itemView); }
         abstract void bind(ChatMessage msg);
     }
 
-    // ===== 이미지 =====
+    // -----------------------------
+    //  이미지 ViewHolder
+    // -----------------------------
     static class ImageViewHolder extends BaseViewHolder {
 
         ImageView imageView;
@@ -79,7 +84,9 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
         }
     }
 
-    // ===== AI 질문 =====
+    // -----------------------------
+    //  AI 질문 ViewHolder
+    // -----------------------------
     static class AiQuestionViewHolder extends BaseViewHolder {
         TextView tvQuestion;
 
@@ -90,12 +97,13 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
 
         @Override
         void bind(ChatMessage msg) {
-            if (msg.getText() != null)
-                tvQuestion.setText(msg.getText());
+            if (msg.getText() != null) tvQuestion.setText(msg.getText());
         }
     }
 
-    // ===== 사용자 답변 =====
+    // -----------------------------
+    //  사용자 답변 ViewHolder
+    // -----------------------------
     static class UserAnswerViewHolder extends BaseViewHolder {
 
         TextView tv;
@@ -104,20 +112,21 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
             super(itemView);
             tv = itemView.findViewById(R.id.tv_user_answer);
 
+            // 유저 입력 칸 클릭 시 다이얼로그 열기
             itemView.setOnClickListener(v -> {
-                Context c = v.getContext();
-                if (c instanceof ChatbotActivity) {
+                Context context = v.getContext();
 
-                    ChatbotActivity activity = (ChatbotActivity) c;
+                if (context instanceof ChatbotActivity) {
+                    ChatbotActivity activity = (ChatbotActivity) context;
 
                     activity.showCustomInputDialog(
                             "답변 입력",
                             tv.getText().toString(),
                             text -> {
-                                // UI 반영
+                                // 1) UI 반영
                                 tv.setText(text);
 
-                                // 서버 전송 & 다음 질문 생성
+                                // 2) 서버 전송 & 챗봇 다음 질문은 Activity가 처리
                                 activity.addUserAnswer(text, "text");
                             }
                     );
@@ -127,11 +136,7 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.BaseViewHolder
 
         @Override
         void bind(ChatMessage msg) {
-            if (msg.getText() != null)
-                tv.setText(msg.getText());
+            if (msg.getText() != null) tv.setText(msg.getText());
         }
-
     }
-
 }
-
