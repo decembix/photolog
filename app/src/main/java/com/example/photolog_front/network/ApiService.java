@@ -94,7 +94,7 @@ public interface ApiService {
     @GET("/posts/{post_id}/comments")
     Call<List<FamilyCommentResponse>> getComments(@Path("post_id") int postId);
 
-    @POST("/posts/{post_id}/cFamilyCommentResponseomments")
+    @POST("/posts/{post_id}/comments")
     Call<FamilyCommentResponse> addComment(
             @Path("post_id") int postId,
             @Body FamilyCommentRequest request
