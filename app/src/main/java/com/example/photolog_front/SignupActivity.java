@@ -122,7 +122,7 @@ public class SignupActivity extends AppCompatActivity {
         // API 스펙: name, username, password
         SignupRequest request = new SignupRequest(name, id, pw);
 
-        ApiService api = RetrofitClient.getApiService();
+        ApiService api = RetrofitClient.getApiService(this);
         api.signup(request).enqueue(new Callback<SignupResponse>() {
             @Override
             public void onResponse(Call<SignupResponse> call, Response<SignupResponse> response) {

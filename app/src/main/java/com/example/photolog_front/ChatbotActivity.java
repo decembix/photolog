@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -46,6 +47,7 @@ public class ChatbotActivity extends AppCompatActivity {
     private AppCompatButton btnFinishChat;
 
     private String sessionId;
+
     private String imageUriString;
 
     private static final int MIN_ANSWERS = 3;
@@ -72,7 +74,7 @@ public class ChatbotActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chatbot);
 
         // ====== Intent 데이터 받아오기 ======
-        sessionId = getIntent().getStringExtra("session_id");
+        int sessionId = getIntent().getIntExtra("session_id", -1);
         String firstQuestion = getIntent().getStringExtra("question");
         imageUriString = getIntent().getStringExtra("selected_photo_uri");
 
@@ -209,7 +211,10 @@ public class ChatbotActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<ChatMessageResponse> call, Throwable t) {
-                Log.e("Chatbot", "전송 실패: " + t.getMessage());
+                Toast.makeText(ChatbotActivity.this,
+                        "서버와 통신 중 오류가 발생했습니다: " + t.getMessage(),
+                        Toast.LENGTH_LONG).show();
+
             }
         });
     }

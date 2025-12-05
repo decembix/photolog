@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -53,7 +54,6 @@ public class DiaryGenerationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_diary_generation);
 
-        // 로고 클릭 → 홈 이동
         LinearLayout logoLayout = findViewById(R.id.layout_logo);
         logoLayout.setOnClickListener(v -> {
             Intent intent = new Intent(this, MainActivity.class);
@@ -78,25 +78,12 @@ public class DiaryGenerationActivity extends AppCompatActivity {
         });
     }
 
-    private void openGalleryWithPermission() {
-        if (checkMediaPermission()) {
-            galleryLauncher.launch("image/*");
-        } else {
-            requestMediaPermission();
-        }
-    }
-
     private void onImageSelected(Uri uri) {
         if (uri != null) {
             isPhotoSelected = true;
             selectedImageUri = uri;
 
             imageView.setImageURI(uri);
-
-            try {
-                getContentResolver().takePersistableUriPermission(
-                        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            } catch (Exception ignored) {}
 
             guideTextView.setText("사진 업로드 준비 완료!\n일기 생성을 시작하세요.");
             guideTextView.setGravity(Gravity.CENTER);
@@ -114,6 +101,14 @@ public class DiaryGenerationActivity extends AppCompatActivity {
         }
     }
 
+    private void openGalleryWithPermission() {
+        if (checkMediaPermission()) {
+            galleryLauncher.launch("image/*");
+        } else {
+            requestMediaPermission();
+        }
+    }
+
     private void requestMediaPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(this,
@@ -126,40 +121,21 @@ public class DiaryGenerationActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == REQUEST_MEDIA_PERMISSION &&
-                grantResults.length > 0 &&
-                grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-            galleryLauncher.launch("image/*");
-
-        } else {
-            Toast.makeText(this, "사진 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    // 🔥 InputStream → byte[] 변환
+    // InputStream → byte[]
     private byte[] convertToBytes(InputStream inputStream) throws Exception {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        int nRead;
+        int read;
         byte[] data = new byte[4096];
 
-        while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, nRead);
+        while ((read = inputStream.read(data)) != -1) {
+            buffer.write(data, 0, read);
         }
 
-        buffer.flush();
         return buffer.toByteArray();
     }
 
-    /* ⭐ 사진 업로드 API */
-    private void uploadImageToServer(Uri uri) {
-
+    // ⭐ 사진 업로드 API
+    private void uploadImageToServer(Uri uri){
         try {
             SharedPreferences prefs = getSharedPreferences("auth", MODE_PRIVATE);
             String token = prefs.getString("token", null);
@@ -182,38 +158,38 @@ public class DiaryGenerationActivity extends AppCompatActivity {
 
             ApiService api = RetrofitClient.getApiService(this);
 
-            api.uploadPhoto("Bearer " + token, filePart)
-                    .enqueue(new Callback<DiaryStartResponse>() {
-                        @Override
-                        public void onResponse(Call<DiaryStartResponse> call, Response<DiaryStartResponse> response) {
+            // 🔥 헤더 전달 없이 호출
+            api.uploadPhoto(filePart).enqueue(new Callback<DiaryStartResponse>() {
+                @Override
+                public void onResponse(Call<DiaryStartResponse> call, Response<DiaryStartResponse> response) {
 
-                            if (!response.isSuccessful()) {
-                                Toast.makeText(DiaryGenerationActivity.this,
-                                        "업로드 실패 (401 인증 필요?)", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
+                    if (!response.isSuccessful()) {
+                        Toast.makeText(DiaryGenerationActivity.this,
+                                "업로드 실패 (서버 응답: " + response.code() + ")",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-                            DiaryStartResponse result = response.body();
+                    DiaryStartResponse result = response.body();
 
-                            // ChatbotActivity로 이동
-                            Intent intent = new Intent(DiaryGenerationActivity.this, ChatbotActivity.class);
-                            intent.putExtra("session_id", result.session_id);
-                            intent.putExtra("question", result.question);
+                    Intent intent = new Intent(DiaryGenerationActivity.this, ChatbotActivity.class);
+                    intent.putExtra("session_id", result.session_id);
+                    intent.putExtra("question", result.question);
+                    intent.putExtra("selected_photo_uri", selectedImageUri.toString());
 
-                            // ⭐⭐ 반드시 사진 URI 전달!!
-                            if (selectedImageUri != null) {
-                                intent.putExtra("selected_photo_uri", selectedImageUri.toString());
-                            }
+                    startActivity(intent);
+                }
 
-                            startActivity(intent);
-                        }
+                @Override
+                public void onFailure(Call<DiaryStartResponse> call, Throwable t) {
+                    t.printStackTrace();  // Logcat에 전체 에러 출력
 
-                        @Override
-                        public void onFailure(Call<DiaryStartResponse> call, Throwable t) {
-                            Toast.makeText(DiaryGenerationActivity.this,
-                                    "서버 연결 실패!", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    Toast.makeText(DiaryGenerationActivity.this,
+                            "실패: " + t.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                }
+
+            });
 
         } catch (Exception e) {
             e.printStackTrace();

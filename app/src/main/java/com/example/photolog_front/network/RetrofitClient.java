@@ -3,13 +3,12 @@ package com.example.photolog_front.network;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
-
-import java.io.IOException;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -25,22 +24,27 @@ public class RetrofitClient {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-            // 🔥 Authorization 자동 추가 Interceptor
+            // ⭐ Authorization 자동 추가
             Interceptor authInterceptor = chain -> {
                 SharedPreferences prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE);
                 String token = prefs.getString("token", null);
 
-                Request request = chain.request()
-                        .newBuilder()
-                        .addHeader("Authorization", token != null ? "Bearer " + token : "")
-                        .build();
+                Request original = chain.request();
+                Request.Builder builder = original.newBuilder();
 
-                return chain.proceed(request);
+                if (token != null) {
+                    builder.header("Authorization", "Bearer " + token);
+                }
+
+                return chain.proceed(builder.build());
             };
 
             OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(60, TimeUnit.SECONDS)   // 연결 대기 60초
+                    .readTimeout(60, TimeUnit.SECONDS)      // 서버 응답 대기 60초
+                    .writeTimeout(60, TimeUnit.SECONDS)     // 업로드 대기 60초
                     .addInterceptor(logging)
-                    .addInterceptor(authInterceptor)   // 🔥 인증 추가
+                    .addInterceptor(authInterceptor)
                     .build();
 
             retrofit = new Retrofit.Builder()
