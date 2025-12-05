@@ -3,6 +3,8 @@ package com.example.photolog_front.network;
 import com.example.photolog_front.model.ChatMessageRequest;
 import com.example.photolog_front.model.ChatMessageResponse;
 import com.example.photolog_front.model.DiaryStartResponse;
+import com.example.photolog_front.model.FamilyCommentRequest;
+import com.example.photolog_front.model.FamilyCommentResponse;
 import com.example.photolog_front.model.FamilyCreateRequest;
 import com.example.photolog_front.model.FamilyJoinRequest;
 import com.example.photolog_front.model.LoginRequest;
@@ -86,4 +88,15 @@ public interface ApiService {
 
     @GET("/families/{familyId}/posts")
     Call<List<FamilyPostItem>> getFamilyPosts(@Path("familyId") int familyId);
+
+
+    // ---------------------- 댓글 ----------------------
+    @GET("/posts/{post_id}/comments")
+    Call<List<FamilyCommentResponse>> getComments(@Path("post_id") int postId);
+
+    @POST("/posts/{post_id}/cFamilyCommentResponseomments")
+    Call<FamilyCommentResponse> addComment(
+            @Path("post_id") int postId,
+            @Body FamilyCommentRequest request
+    );
 }

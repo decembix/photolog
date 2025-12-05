@@ -115,7 +115,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:scaleType="centerCrop"
-                        android:src="@drawable/sample"
+                        android:src="@drawable/food_sample"
                         android:contentDescription="@string/sample_img_desc" />
                 </androidx.cardview.widget.CardView>
 

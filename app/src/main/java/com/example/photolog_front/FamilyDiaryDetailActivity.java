@@ -17,11 +17,16 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
+import com.example.photolog_front.model.FamilyCommentRequest;
+import com.example.photolog_front.model.FamilyCommentResponse;
+import com.example.photolog_front.network.ApiService;
+import com.example.photolog_front.network.RetrofitClient;
+
 import java.util.List;
-import java.util.Locale;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class FamilyDiaryDetailActivity extends AppCompatActivity {
 
@@ -32,10 +37,9 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
     private EditText etComment;
     private View btnSend;
 
-    private final List<Comment> commentList = new ArrayList<>();
-    private final String currentUser = "test";
+    private ApiService api;
+    private int postId;
 
-    private Comment replyingTo = null;
     private static final String DEFAULT_HINT = "댓글을 입력하세요";
 
     @Override
@@ -52,6 +56,15 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
         etComment = findViewById(R.id.et_comment);
         btnSend = findViewById(R.id.btn_send);
 
+        api = RetrofitClient.getApiService(this);
+        postId = getIntent().getIntExtra("post_id", -1);
+
+        if (postId == -1) {
+            Toast.makeText(this, "게시물을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         Diary diary = (Diary) getIntent().getSerializableExtra("diary");
 
         tvTitle.setText(diary.getTitle());
@@ -63,30 +76,23 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
         else if (diary.getImageRes() != 0)
             imgDiary.setImageResource(diary.getImageRes());
 
-        findViewById(R.id.layout_logo).setOnClickListener(v -> {
-            Intent intent = new Intent(this, MainActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-        });
+        findViewById(R.id.btn_back_to_list).setOnClickListener(v -> finish());
 
-        findViewById(R.id.btn_back_to_list).setOnClickListener(v -> {
-            Intent intent = new Intent(this, FamilyDiaryActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-        });
+        // 댓글 불러오기
+        loadComments();
 
-        // 댓글 작성 버튼 → 팝업으로 입력
+        // 댓글 등록
         btnSend.setOnClickListener(v -> submitComment());
 
-        renderComments();
-
-        // 하단 입력창 클릭 → 팝업 열기
+        // 팝업 입력창 열기
         etComment.setOnClickListener(v -> {
             showCommentDialog("댓글 달기", etComment.getText().toString());
         });
     }
 
-    // 댓글 입력 다이얼로그 (팝업)
+    // -------------------------
+    // 댓글 입력 팝업
+    // -------------------------
     private void showCommentDialog(String title, String defaultText) {
 
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_custom, null);
@@ -97,7 +103,6 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
 
         tvDialogTitle.setText(title);
         etInput.setText(defaultText);
-
         etInput.setSingleLine(false);
         etInput.setMaxLines(Integer.MAX_VALUE);
         etInput.setMovementMethod(new ScrollingMovementMethod());
@@ -112,7 +117,7 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
             String text = etInput.getText().toString().trim();
             if (!text.isEmpty()) {
                 etComment.setText(text);
-                etComment.setSelection(text.length()); // 커서 맨 뒤
+                etComment.setSelection(text.length());
             }
             dialog.dismiss();
         });
@@ -121,7 +126,44 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // 최종적으로 댓글을 실제 추가하는 부분
+    // -------------------------
+    // 댓글 서버에서 불러오기
+    // -------------------------
+    private void loadComments() {
+        api.getComments(postId).enqueue(new Callback<List<FamilyCommentResponse>>() {
+            @Override
+            public void onResponse(Call<List<FamilyCommentResponse>> call, Response<List<FamilyCommentResponse>> response) {
+
+                if (!response.isSuccessful()) {
+                    Toast.makeText(FamilyDiaryDetailActivity.this, "댓글 불러오기 실패", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                List<FamilyCommentResponse> comments = response.body();
+                commentContainer.removeAllViews();
+
+                if (comments == null || comments.isEmpty()) {
+                    tvNoComment.setVisibility(View.VISIBLE);
+                    return;
+                }
+
+                tvNoComment.setVisibility(View.GONE);
+
+                for (FamilyCommentResponse c : comments) {
+                    addCommentView(c.user_name, c.content, c.created_at);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<FamilyCommentResponse>> call, Throwable t) {
+                Toast.makeText(FamilyDiaryDetailActivity.this, "서버 연결 오류", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // -------------------------
+    // 서버로 댓글 등록
+    // -------------------------
     private void submitComment() {
         String text = etComment.getText().toString().trim();
 
@@ -130,98 +172,61 @@ public class FamilyDiaryDetailActivity extends AppCompatActivity {
             return;
         }
 
-        String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
+        FamilyCommentRequest request = new FamilyCommentRequest(text);
 
-        if (replyingTo == null) {
-            commentList.add(new Comment(currentUser, text, time));
-        } else {
-            String replyMessage = "@" + replyingTo.user + " " + text;
-            Comment reply = new Comment(currentUser, replyMessage, time);
-            replyingTo.replies.add(reply);
-            replyingTo = null;
-        }
+        api.addComment(postId, request).enqueue(new Callback<FamilyCommentResponse>() {
+            @Override
+            public void onResponse(Call<FamilyCommentResponse> call, Response<FamilyCommentResponse> response) {
+                if (response.isSuccessful()) {
+                    etComment.setText("");
+                    loadComments();
+                } else {
+                    Toast.makeText(FamilyDiaryDetailActivity.this, "댓글 등록 실패", Toast.LENGTH_SHORT).show();
+                }
+            }
 
-        etComment.setText("");
-        etComment.setHint(DEFAULT_HINT);
-
-        renderComments();
+            @Override
+            public void onFailure(Call<FamilyCommentResponse> call, Throwable t) {
+                Toast.makeText(FamilyDiaryDetailActivity.this, "네트워크 오류", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    // 댓글 렌더링
-    private void renderComments() {
-
-        if (commentList.isEmpty()) {
-            tvNoComment.setVisibility(View.VISIBLE);
-            commentContainer.removeAllViews();
-            return;
-        }
-
-        tvNoComment.setVisibility(View.GONE);
-        commentContainer.removeAllViews();
-
-        for (Comment c : commentList) {
-            addCommentView(c, 0);
-        }
-    }
-
-    // 개별 댓글 뷰 추가
-    private void addCommentView(Comment comment, int depth) {
-
-        int indent = depth == 0 ? 0 : dpToPx(20);
+    // -------------------------
+    // UI에 댓글 표시
+    // -------------------------
+    private void addCommentView(String user, String text, String time) {
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(indent, dpToPx(8), dpToPx(10), dpToPx(8));
+        layout.setPadding(0, dpToPx(8), dpToPx(10), dpToPx(8));
 
         TextView tvUser = new TextView(this);
-        tvUser.setText(comment.user + " • " + comment.time);
+        tvUser.setText(user + " • " + formatTime(time));
         tvUser.setTextColor(Color.parseColor("#5D3316"));
         tvUser.setTypeface(Typeface.DEFAULT_BOLD);
         tvUser.setTextSize(13);
 
         TextView tvText = new TextView(this);
-        tvText.setText("- " + comment.text);
+        tvText.setText("- " + text);
         tvText.setTextColor(Color.parseColor("#5D3316"));
         tvText.setTextSize(15);
 
-        TextView tvReply = new TextView(this);
-        tvReply.setText("답글 달기");
-        tvReply.setTextColor(Color.parseColor("#8C6B56"));
-        tvReply.setTextSize(12);
-
-        // 답글 클릭 → 팝업 입력
-        tvReply.setOnClickListener(v -> {
-            replyingTo = comment;
-            showCommentDialog("답글 달기 (@" + comment.user + ")", "");
-        });
-
         layout.addView(tvUser);
         layout.addView(tvText);
-        layout.addView(tvReply);
 
         commentContainer.addView(layout);
+    }
 
-        // 대댓글 재귀적으로 추가
-        for (Comment r : comment.replies) {
-            addCommentView(r, 1);
+    private String formatTime(String datetime) {
+        try {
+            return datetime.substring(11, 16);
+        } catch (Exception e) {
+            return "--:--";
         }
     }
 
     private int dpToPx(int dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
-    }
-
-    // 댓글 모델
-    public static class Comment {
-        String user;
-        String text;
-        String time;
-        List<Comment> replies = new ArrayList<>();
-
-        public Comment(String u, String t, String time) {
-            this.user = u;
-            this.text = t;
-            this.time = time;
-        }
     }
 }

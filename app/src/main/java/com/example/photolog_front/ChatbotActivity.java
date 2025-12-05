@@ -220,14 +220,56 @@ public class ChatbotActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    // ===== 유저가 수동 종료 (세션 stop API 필요 시 여기에 호출) =====
+    // ===== 유저가 수동 종료 (세션 stop 호출) =====
     private void finishManually() {
-        Intent intent = new Intent(this, DiaryResultActivity.class);
-        intent.putExtra("diary_title", "AI가 생성한 제목");
-        intent.putExtra("diary_content", "입력한 내용을 기반으로 일기가 생성됩니다.");
-        intent.putExtra("photo_uri", imageUriString);
-        startActivity(intent);
+        if (sessionId <= 0) {
+            Toast.makeText(this, "세션 정보가 없습니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 버튼 연타 방지 (선택)
+        btnFinishChat.setEnabled(false);
+
+        ApiService api = RetrofitClient.getApiService(this);
+        api.stopSession(sessionId).enqueue(new Callback<ChatMessageResponse>() {
+            @Override
+            public void onResponse(Call<ChatMessageResponse> call,
+                                   Response<ChatMessageResponse> response) {
+
+                btnFinishChat.setEnabled(true);
+
+                if (!response.isSuccessful() || response.body() == null) {
+                    Toast.makeText(ChatbotActivity.this,
+                            "일기 생성에 실패했습니다. (서버 응답: " + response.code() + ")",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                ChatMessageResponse res = response.body();
+
+                // completed + diary 가 있어야 일기 화면으로 이동
+                if (!res.completed || res.diary == null) {
+                    Toast.makeText(ChatbotActivity.this,
+                            "아직 일기를 만들 수 있는 정보가 부족해요.",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // 자동완성 때 쓰던 로직 재사용
+                goToDiaryResult(res);
+                finish();
+            }
+
+            @Override
+            public void onFailure(Call<ChatMessageResponse> call, Throwable t) {
+                btnFinishChat.setEnabled(true);
+                Toast.makeText(ChatbotActivity.this,
+                        "서버 통신 오류: " + t.getMessage(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
     }
+
 
 
     // ===== 종료 다이얼로그 =====
