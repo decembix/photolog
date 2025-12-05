@@ -145,6 +145,10 @@ public class DiaryGenerationActivity extends AppCompatActivity {
                 return;
             }
 
+            // 🔥 버튼 중복 클릭 방지 (비활성화 + 로딩 표시)
+            selectPhotoButton.setEnabled(false);
+            selectPhotoButton.setText("생성 중...");
+
             InputStream is = getContentResolver().openInputStream(uri);
             byte[] bytes = convertToBytes(is);
 
@@ -158,10 +162,13 @@ public class DiaryGenerationActivity extends AppCompatActivity {
 
             ApiService api = RetrofitClient.getApiService(this);
 
-            // 🔥 헤더 전달 없이 호출
             api.uploadPhoto(filePart).enqueue(new Callback<DiaryStartResponse>() {
                 @Override
                 public void onResponse(Call<DiaryStartResponse> call, Response<DiaryStartResponse> response) {
+
+                    // 🔥 버튼 다시 활성화
+                    selectPhotoButton.setEnabled(true);
+                    selectPhotoButton.setText("일기 생성 시작");
 
                     if (!response.isSuccessful()) {
                         Toast.makeText(DiaryGenerationActivity.this,
@@ -182,7 +189,12 @@ public class DiaryGenerationActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(Call<DiaryStartResponse> call, Throwable t) {
-                    t.printStackTrace();  // Logcat에 전체 에러 출력
+
+                    // 🔥 실패 시 버튼 다시 활성화
+                    selectPhotoButton.setEnabled(true);
+                    selectPhotoButton.setText("일기 생성 시작");
+
+                    t.printStackTrace();
 
                     Toast.makeText(DiaryGenerationActivity.this,
                             "실패: " + t.getMessage(),
@@ -192,6 +204,11 @@ public class DiaryGenerationActivity extends AppCompatActivity {
             });
 
         } catch (Exception e) {
+
+            // 🔥 예외 시에도 버튼 복귀
+            selectPhotoButton.setEnabled(true);
+            selectPhotoButton.setText("일기 생성 시작");
+
             e.printStackTrace();
             Toast.makeText(this, "파일 처리 중 오류", Toast.LENGTH_SHORT).show();
         }

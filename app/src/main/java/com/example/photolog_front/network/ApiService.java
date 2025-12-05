@@ -13,6 +13,9 @@ import com.example.photolog_front.model.UserResponse;
 import com.example.photolog_front.model.FamilyMemberResponse;
 import com.example.photolog_front.model.MyDiaryListResponse;
 import com.google.gson.JsonObject;
+import com.example.photolog_front.model.FamilyItem;
+import com.example.photolog_front.model.FamilyPostItem;
+
 
 import java.util.List;
 
@@ -78,5 +81,9 @@ public interface ApiService {
     @GET("/diaries")
     Call<MyDiaryListResponse> getMyDiaries();
 
+    @GET("/myfamily")
+    Call<List<FamilyItem>> getMyFamily();
 
+    @GET("/families/{familyId}/posts")
+    Call<List<FamilyPostItem>> getFamilyPosts(@Path("familyId") int familyId);
 }
